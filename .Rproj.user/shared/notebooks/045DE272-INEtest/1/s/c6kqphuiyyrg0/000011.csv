@@ -1,5 +1,0 @@
-"0","Indicadores <- read.xlsx(""datasets/Indicadores.xlsx"", "
-"0","    sheet = ""Indicadores"", skip = 14)"
-"2","Error in read.xlsx(""datasets/Indicadores.xlsx"", sheet = ""Indicadores"",  : 
-  argument 2 matches multiple formal arguments
-"

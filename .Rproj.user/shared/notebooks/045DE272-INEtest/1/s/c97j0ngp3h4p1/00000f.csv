@@ -1,0 +1,17 @@
+"0","linkage_geo <- read_csv(""datasets/linkage_geo.csv"")"
+"2","[1mRows: [22m[34m310[39m [1mColumns: [22m[34m21[39m"
+"2","[36m──[39m [1mColumn specification[22m [36m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m
+[1mDelimiter:[22m "",""
+[31mchr[39m (17): cod_geo, geo, cod_dicofre11, cod_nuts3, nuts3, cod_nuts2, nuts2, cod_nuts1, nuts1, cod_pais, pais, tot, cod_geo_nuts2002, aces1, aces2, cod_ars, ars
+[32mdbl[39m  (3): nivel_geo, dicofre11_2, cod_aces
+[33mlgl[39m  (1): cod_tot"
+"2","
+[36mℹ[39m Use `spec()` to retrieve the full column specification for this data.
+[36mℹ[39m Specify the column types or set `show_col_types = FALSE` to quiet this message."
+"0","  "
+"0","linkage_geo <- linkage_geo %>%  "
+"0","  select(geo, ars, nuts3, aces2)  %>%"
+"0","  rename(municip=""geo"")%>%"
+"0","  mutate(municip= recode(municip, ""Calheta""=""Calheta [R.A. Madeira]""))"
+"0",""
+"0",""

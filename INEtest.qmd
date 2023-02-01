@@ -4,9 +4,7 @@ format: html
 editor: visual
 ---
 
-## Quarto
-
-Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+## Packages
 
 ```{r}
 install.packages('jsonlite', dependencies=TRUE, repos='http://cran.rstudio.com/')
@@ -45,23 +43,40 @@ remove(pkg)
 
 ## Fetch Datasets
 
-All datasets from INE - Bulky - still needs work
+All datasets from INE - Bulky - still needs works
+
+Passos para extração em código:
+
+1.  Extração dos indicadores do INE
+
+2.  Filtro para os que estão disponíveis do portal
+
+3.  Destes o ideal será escolher alguns e filtrar por esses - ainda não implementado
+
+4.  Depois teremos duas opções:
+
+    1.  Extração do último ano ou últimos anos com todos os dados- ainda não implementado
+
+        1.  Limitações de linhas
+
+    2.  Extração por municipios ou áreas desejadas - ver Dim
 
 ```{r}
-# library(readxl)
-# Indicadores <- read_excel("datasets/Indicadores.xlsx", skip = 14)
-# 
-# Indicadores <- Indicadores %>%
-#   filter(`Disponível no Portal`== "Sim")
+library(readxl)
+Indicadores <- read_excel("datasets/Indicadores.xlsx", skip = 14)
+
+Indicadores <- Indicadores %>%
+  filter(`Disponível no Portal`== "Sim")
 ```
 
 ```{r}
 
-# https://www.ine.pt/ine/json_indicador/pindica.jsp?op=2&varcd=0011613&Dim1=T&lang=PT
+#https://www.ine.pt/ine/json_indicador/pindica.jsp?op=2&varcd=0011613&Dim1=T&lang=PT
+
 # numbers <- Indicadores$`Código de difusão`
 # l <- length(numbers)
 # 
-# for(i in 1:l ){
+# for(i in 1:5 ){
 #     result <- fromJSON(paste0("https://www.ine.pt/ine/json_indicador/pindica.jsp?op=2&varcd=",numbers[i],"&Dim1=T&lang=PT"))
 #   if (!("IndicadorCod" %in% colnames(result))) {
 #     numbers <- numbers[-i]
@@ -69,22 +84,18 @@ All datasets from INE - Bulky - still needs work
 #     i <- i - 1
 #   } else {
 #     assign(result$IndicadorDsg,as.data.frame(result$Dados))
-#     d2 <- unnest_longer(result$Dados,col = colnames(result$IndicadorDsg),names_repair = "minimal")
+#     d1 <- unnest_longer(result$Dados,col = colnames(result$IndicadorDsg),names_repair = "minimal")
 #     write_csv(d2,file = paste0("datasets/",numbers[i],".csv"))
 #   }
 #    if (i %% 100 == 0) {
 #       Sys.sleep(60)
 #   }
 # }
-# 
-# 
-# pop<-fromJSON("https://www.ine.pt/ine/json_indicador/pindica.jsp?op=2&varcd=0011626&Dim1=T&Dim2=0101&lang=PT", flatten = TRUE)
-# pop<-as.data.frame(pop$Dados.2021)
-# pop
-# https://www.ine.pt/ine/json_indicador/pindica.jsp?op=2&varcd=0011626&Dim1=T&Dim2=200&lang=PT
 ```
 
-## Getting datasets para pop censitária
+# Data gathering
+
+## Pop censitária - 2021
 
 ```{r}
 codigos_df <- read_excel("datasets/ref_geo.xlsx")
@@ -93,7 +104,7 @@ l <- length(numbers)
 for(i in 1:l ){
     result<- fromJSON(paste0("https://www.ine.pt/ine/json_indicador/pindica.jsp?op=2&varcd=0011626&Dim1=T&Dim2=",numbers[i],"&lang=PT"))
     pop <- as.data.frame(result$Dados$'2021')
-   if (i %% 10 == 0) {
+   if (i %% 99 == 0) {
       Sys.sleep(60)
    }
   if(i==1){
@@ -106,7 +117,22 @@ write_csv(d2,file = paste0("datasets/pop_base_2021.csv"))
 
 ```
 
-## Data Cleanup
+# Data Cleanup
+
+## Linkage geo
+
+Vlookup in R - Merge function
+
+```{r}
+linkage_geo <- read_csv("datasets/linkage_geo.csv")
+  
+linkage_geo <- linkage_geo %>%  
+  select(geo, ars, nuts3, aces2)  %>%
+  rename(municip="geo")%>%
+  mutate(municip= recode(municip, "Calheta"="Calheta [R.A. Madeira]"))
+
+
+```
 
 Pivot Individual
 
@@ -114,7 +140,9 @@ Pivot Individual
 
 d3 <- d2%>%
   select(-dim_3,-dim_4)%>%
-  pivot_wider(names_from = dim_4_t,values_from = valor)
+  pivot_wider(names_from = dim_4_t,values_from = valor)%>%
+  rename(municip = geodsg)
+
 
 write_csv(d3,file = paste0("datasets/pop_base_2021_anos.csv"))
 ```
@@ -123,32 +151,104 @@ Pivot quinquenal
 
 ```{r}
 d2$dim_4 <- as.numeric(d2$dim_4)
-
+d2$valor <- as.numeric(d2$valor)
 #grupos etários
-gr_1 <- c(1)
-gr_2 <- seq(2:5) #0 - 4 anos
-gr_2 <- seq(6:10)#5 - 9 anos
-gr_3 <- seq(11:15) #10 - 14 anos
-gr_4 <- seq(16:20)#15 - 19 anos
-gr_5 <- seq(21:25) #20 - 24 anos
-gr_6 <- seq(26:30)#25 - 29 anos
-gr_7 <- seq(31:35) #30 - 34 anos
-gr_8 <- seq(36:40)#15 - 19 anos
-gr_2 <- seq(41:45)#40 - 44 anos
-gr_3 <- seq(11:15) #45 - 49 anos
-gr_4 <- seq(16:20)#50 - 54 anos
-gr_5 <- seq(21:25) #55 - 59 anos
-gr_6 <- seq(26:30)#60 - 64 anos
-gr_7 <- seq(31:35) #65 - 69 anos
-gr_8 <- seq(36:40)#70 - 19 anos
+gr_1  <- c(1)        #<1 ano
+gr_2  <- c(2:5)    #0 - 4 anos
+gr_3  <- c(6:10)   #5 - 9 anos
+gr_4  <- c(11:15)  #10 - 14 anos
+gr_5  <- c(16:20)  #15 - 19 anos
+gr_6  <- c(21:25)  #20 - 24 anos
+gr_7  <- c(26:30)  #25 - 29 anos
+gr_8  <- c(31:35)  #30 - 34 anos
+gr_9  <- c(36:40)  #35 - 39 anos
+gr_10 <- c(41:45)  #40 - 44 anos
+gr_11 <- c(46:50) #45 - 49 anos
+gr_12 <- c(51:55)  #50 - 55 anos
+gr_13 <- c(56:60)  #56 - 59 anos
+gr_14 <- c(61:65)  #60 - 65 anos
+gr_15 <- c(66:70)  #65 - 69 anos
+gr_16 <- c(71:75)  #70 - 74 anos
+gr_17 <- c(76:80)  #75 - 80 anos
+gr_18 <- c(81:85)  #81 - 85 anos
+gr_19 <- c(86:101)  #85 e mais anos
+gr_20 <- c("T")  #Totais
+gr_20
+
+munucip_pop_age <- d2 %>%
+  mutate(municip = case_when(
+      geocod=="3101" ~ "Calheta [R.A. Madeira]", 
+      geocod=="4501" ~ "Calheta [R.A. Açores]",
+      geocod=="4201" ~ "Lagoa [R.A. Açores]",
+      TRUE ~ as.character(geodsg)))%>%
+  mutate(etario = case_when(
+    dim_4 %in% gr_1 ~ "<1 ano"
+    ,dim_4 %in% gr_2 ~ "0 - 4 anos"
+    ,dim_4 %in% gr_3 ~ "5 - 9 anos"
+    ,dim_4 %in% gr_4 ~ "10 - 14 anos"
+    ,dim_4 %in% gr_5 ~ "15 - 19 anos"
+    ,dim_4 %in% gr_6 ~ "20 - 24 anos"
+    ,dim_4 %in% gr_7 ~ "25 - 29 anos"
+    ,dim_4 %in% gr_8 ~ "30 - 34 anos"
+    ,dim_4 %in% gr_9 ~ "35 - 39 anos"
+    ,dim_4 %in% gr_10 ~ "40 - 44 anos"
+    ,dim_4 %in% gr_11 ~ "45 - 49 anos"
+    ,dim_4 %in% gr_12 ~ "50 - 54 anos"
+    ,dim_4 %in% gr_13 ~ "55 - 59 anos"
+    ,dim_4 %in% gr_14 ~ "60 - 64 anos"
+    ,dim_4 %in% gr_15 ~ "65 - 69 anos"
+    ,dim_4 %in% gr_16 ~ "70 - 74 anos"
+    ,dim_4 %in% gr_17 ~ "75 - 80 anos"
+    ,dim_4 %in% gr_18 ~ "81 - 84 anos"
+    ,dim_4 %in% gr_19 ~ "85 e mais anos"
+    ,dim_4 %in% gr_20 ~ "Total"
+  )) %>%
+  select(-dim_4,-dim_3,-dim_4_t)%>%
+  group_by(etario)%>%
+  pivot_wider(names_from = etario,values_from = valor, values_fn =sum)%>%
+  rename(Total = "NA")%>%
+  replace(is.na(.),0)%>%
+  left_join(linkage_geo, by = "municip")
+
+colnames(munucip_pop_age)
+#Reordenar colunas
+munucip_pop_age2 <- munucip_pop_age[,c(1,2,3,4,24,25,26,27,6,11,15,9,7,8,21,16,10,13,18,14,17,19,12,23,22,5,20)]
+
+munucip_pop_age2 <- munucip_pop_age2%>%
+  filter(dim_3_t == "H" | dim_3_t == "M" )
+
+munucip_pop_age <- d2 %>%
+  rename(municip = geodsg)%>%
+  mutate(etario = case_when(
+    dim_4 %in% gr_1 ~ "<1 ano"
+    ,dim_4 %in% gr_2 ~ "0 - 4 anos"
+    ,dim_4 %in% gr_3 ~ "5 - 9 anos"
+    ,dim_4 %in% gr_4 ~ "10 - 14 anos"
+    ,dim_4 %in% gr_5 ~ "15 - 19 anos"
+    ,dim_4 %in% gr_6 ~ "20 - 24 anos"
+    ,dim_4 %in% gr_7 ~ "25 - 29 anos"
+    ,dim_4 %in% gr_8 ~ "30 - 34 anos"
+    ,dim_4 %in% gr_9 ~ "35 - 39 anos"
+    ,dim_4 %in% gr_10 ~ "40 - 44 anos"
+    ,dim_4 %in% gr_11 ~ "45 - 49 anos"
+    ,dim_4 %in% gr_12 ~ "50 - 54 anos"
+    ,dim_4 %in% gr_13 ~ "55 - 59 anos"
+    ,dim_4 %in% gr_14 ~ "60 - 64 anos"
+    ,dim_4 %in% gr_15 ~ "65 - 69 anos"
+    ,dim_4 %in% gr_16 ~ "70 - 74 anos"
+    ,dim_4 %in% gr_17 ~ "75 - 80 anos"
+    ,dim_4 %in% gr_18 ~ "81 - 84 anos"
+    ,dim_4 %in% gr_19 ~ "85 e mais anos"
+    ,dim_4 %in% gr_20 ~ "Total"
+  )) %>%
+  select(-dim_4,-dim_3,-dim_4_t)%>%
+  group_by(etario)%>%
+  left_join(linkage_geo, by = "municip")%>%
+  filter(dim_3_t == "H" | dim_3_t == "M" )%>%
+  rename(populacao = valor)%>%
+  replace(is.na(.),"Total")
 
 
-
-
-,,,,,,30 - 34 anos,35 - 39 anos,40 - 44 anos,45 - 49 anos,50 - 54 anos,55 - 59 anos,60 - 64 anos,65 - 69 anos,70 - 74 anos,75 - 79 anos,80 - 84 anos,85 e mais anos
-
-
-d3 <- 
-
-  write_csv(d3,file = paste0("datasets/pop_base_2021_anos.csv"))
+write_csv(munucip_pop_age,file = paste0("datasets/munucip_pop_age_long.csv"))
+write_csv(munucip_pop_age2,file = paste0("datasets/munucip_pop_age_lwide.csv"))
 ```
