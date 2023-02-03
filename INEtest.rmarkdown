@@ -1,0 +1,519 @@
+---
+title: "INE"
+author: "João Dionísio"
+date: "February 2023"
+format:
+  html:
+    smooth-scroll: true
+    self-contained: true
+    toc: true
+    toc-location: left
+theme: cosmo
+smooth-scroll: true
+execute:
+  warning: false
+project:
+  output-dir: outputs/documents
+---
+
+
+## Packages
+
+
+```{r}
+install.packages('jsonlite', dependencies=TRUE, repos='http://cran.rstudio.com/')
+library(jsonlite)
+
+install.packages("tidyverse", dependencies=TRUE, repos='http://cran.rstudio.com/')
+library(tidyverse)
+
+install.packages("readxl", dependencies=TRUE, repos='http://cran.rstudio.com/')
+library(readxl)
+
+install.packages("data.table", dependencies=TRUE)
+library("data.table")
+```
+
+
+## Fetch Datasets
+
+All datasets from INE - Bulky - still needs works
+
+Passos para extração em código:
+
+1.  Extração dos indicadores do INE
+
+2.  Filtro para os que estão disponíveis do portal
+
+3.  Destes o ideal será escolher alguns e filtrar por esses - ainda não implementado
+
+4.  Depois teremos duas opções:
+
+    1.  Extração do último ano ou últimos anos com todos os dados- ainda não implementado
+
+        1.  Limitações de linhas
+
+    2.  Extração por municipios ou áreas desejadas - ver Dim
+
+
+```{r}
+library(readxl)
+Indicadores <- read_excel("datasets/Indicadores.xlsx", skip = 14)
+
+Indicadores <- Indicadores %>%
+  filter(`Disponível no Portal`== "Sim")
+```
+
+```{r}
+
+#https://www.ine.pt/ine/json_indicador/pindica.jsp?op=2&varcd=0011613&Dim1=T&lang=PT
+
+numbers <- Indicadores$`Código de difusão`
+l <- length(numbers)
+
+for(i in 1:5 ){
+    result <- fromJSON(paste0("https://www.ine.pt/ine/json_indicador/pindica.jsp?op=2&varcd=",numbers[i],"&Dim1=T&lang=PT"))
+  if (!("IndicadorCod" %in% colnames(result))) {
+    numbers <- numbers[-i]
+    l <- l - 1
+    i <- i - 1
+  } else {
+    assign(result$IndicadorDsg,as.data.frame(result$Dados))
+    d1 <- unnest_longer(result$Dados,col = colnames(result$IndicadorDsg),names_repair = "minimal")
+    write_csv(d2,file = paste0("datasets/",numbers[i],".csv"))
+  }
+   if (i %% 100 == 0) {
+      Sys.sleep(60)
+  }
+}
+```
+
+
+# First Test
+
+## Pop censitária - 2021
+
+
+```{r}
+codigos_df <- read_excel("datasets/ref_geo.xlsx")
+
+
+numbers <- codigos_df$last4
+
+l <- length(numbers)
+for(i in 1:l ){
+    result<- fromJSON(paste0("https://www.ine.pt/ine/json_indicador/pindica.jsp?op=2&varcd=0011626&Dim1=T&Dim2=",numbers[i],"&lang=PT"))
+    pop <- as.data.frame(result$Dados$'2021')
+   if (i %% 99 == 0) {
+      Sys.sleep(60)
+   }
+  if(i==1){
+  d2 <- pop
+  }else{
+    d2 <- rbind(d2,pop)
+  }
+}
+
+d2 <- d2 %>%
+  mutate(municip = case_when(
+      geocod=="1113101" ~ "Calheta [R.A. Madeira]", 
+      geocod=="1114501" ~ "Calheta [R.A. Açores]",
+      geocod=="1114201" ~ "Lagoa [R.A. Açores]",
+      TRUE ~ as.character(geodsg)))
+
+fwrite(d2,file = paste0("datasets/pop_base_2021.csv"), bom = T)
+
+```
+
+
+# Improvements
+
+## Linkage geo
+
+Vlookup in R - Merge function
+
+
+```{r}
+linkage_geo <- read_csv("datasets/linkage_geo.csv")
+  
+linkage_geo <- linkage_geo %>%  
+  select(geo, ars, nuts3, aces2, nuts1, nuts2, cod_geo_nuts2002, cod_geo)  %>%
+  rename(municip="geo")%>%
+  mutate(municip= recode(municip, "Calheta"="Calheta [R.A. Madeira]"))
+
+
+```
+
+
+Pivot Individual
+
+
+```{r}
+
+d3 <- d2%>%
+  select(-dim_3,-dim_4)%>%
+  pivot_wider(names_from = dim_4_t,values_from = valor)%>%
+
+write_csv(d3,file = paste0("datasets/pop_base_2021_anos.csv"))
+```
+
+
+Pivot quinquenal
+
+
+```{r}
+d2$dim_4 <- as.numeric(d2$dim_4)
+d2$valor <- as.numeric(d2$valor)
+#grupos etários
+gr_1  <- c(1)        #<1 ano
+gr_2  <- c(2:5)    #0 - 4 anos
+gr_3  <- c(6:10)   #5 - 9 anos
+gr_4  <- c(11:15)  #10 - 14 anos
+gr_5  <- c(16:20)  #15 - 19 anos
+gr_6  <- c(21:25)  #20 - 24 anos
+gr_7  <- c(26:30)  #25 - 29 anos
+gr_8  <- c(31:35)  #30 - 34 anos
+gr_9  <- c(36:40)  #35 - 39 anos
+gr_10 <- c(41:45)  #40 - 44 anos
+gr_11 <- c(46:50) #45 - 49 anos
+gr_12 <- c(51:55)  #50 - 55 anos
+gr_13 <- c(56:60)  #56 - 59 anos
+gr_14 <- c(61:65)  #60 - 65 anos
+gr_15 <- c(66:70)  #65 - 69 anos
+gr_16 <- c(71:75)  #70 - 74 anos
+gr_17 <- c(76:80)  #75 - 80 anos
+gr_18 <- c(81:85)  #81 - 85 anos
+gr_19 <- c(86:101)  #85 e mais anos
+gr_20 <- c("T")  #Totais
+
+munucip_pop_age <- d2 %>%
+  mutate(etario = case_when(
+    dim_4 %in% gr_1 ~ "<1 ano"
+    ,dim_4 %in% gr_2 ~ "0 - 4 anos"
+    ,dim_4 %in% gr_3 ~ "5 - 9 anos"
+    ,dim_4 %in% gr_4 ~ "10 - 14 anos"
+    ,dim_4 %in% gr_5 ~ "15 - 19 anos"
+    ,dim_4 %in% gr_6 ~ "20 - 24 anos"
+    ,dim_4 %in% gr_7 ~ "25 - 29 anos"
+    ,dim_4 %in% gr_8 ~ "30 - 34 anos"
+    ,dim_4 %in% gr_9 ~ "35 - 39 anos"
+    ,dim_4 %in% gr_10 ~ "40 - 44 anos"
+    ,dim_4 %in% gr_11 ~ "45 - 49 anos"
+    ,dim_4 %in% gr_12 ~ "50 - 54 anos"
+    ,dim_4 %in% gr_13 ~ "55 - 59 anos"
+    ,dim_4 %in% gr_14 ~ "60 - 64 anos"
+    ,dim_4 %in% gr_15 ~ "65 - 69 anos"
+    ,dim_4 %in% gr_16 ~ "70 - 74 anos"
+    ,dim_4 %in% gr_17 ~ "75 - 80 anos"
+    ,dim_4 %in% gr_18 ~ "81 - 84 anos"
+    ,dim_4 %in% gr_19 ~ "85 e mais anos"
+    ,dim_4 %in% gr_20 ~ "Total"
+  )) %>%
+  select(-dim_4,-dim_3,-dim_4_t)%>%
+  group_by(etario)%>%
+  pivot_wider(names_from = etario,values_from = valor, values_fn =sum)%>%
+  rename(Total = "NA")%>%
+  replace(is.na(.),0)%>%
+  left_join(linkage_geo, by = "municip")
+
+#Reordenar colunas
+munucip_pop_age2 <- munucip_pop_age[,c(1,2,3,4,24,25,26,27,6,11,15,9,7,8,21,16,10,13,18,14,17,19,12,23,22,5,20)]
+
+munucip_pop_age2 <- munucip_pop_age2%>%
+  filter(dim_3_t == "H" | dim_3_t == "M" )
+
+munucip_pop_age <- d2 %>%
+  mutate(etario = case_when(
+    dim_4 %in% gr_1 ~ "<1 ano"
+    ,dim_4 %in% gr_2 ~ "0 - 4 anos"
+    ,dim_4 %in% gr_3 ~ "5 - 9 anos"
+    ,dim_4 %in% gr_4 ~ "10 - 14 anos"
+    ,dim_4 %in% gr_5 ~ "15 - 19 anos"
+    ,dim_4 %in% gr_6 ~ "20 - 24 anos"
+    ,dim_4 %in% gr_7 ~ "25 - 29 anos"
+    ,dim_4 %in% gr_8 ~ "30 - 34 anos"
+    ,dim_4 %in% gr_9 ~ "35 - 39 anos"
+    ,dim_4 %in% gr_10 ~ "40 - 44 anos"
+    ,dim_4 %in% gr_11 ~ "45 - 49 anos"
+    ,dim_4 %in% gr_12 ~ "50 - 54 anos"
+    ,dim_4 %in% gr_13 ~ "55 - 59 anos"
+    ,dim_4 %in% gr_14 ~ "60 - 64 anos"
+    ,dim_4 %in% gr_15 ~ "65 - 69 anos"
+    ,dim_4 %in% gr_16 ~ "70 - 74 anos"
+    ,dim_4 %in% gr_17 ~ "75 - 80 anos"
+    ,dim_4 %in% gr_18 ~ "81 - 84 anos"
+    ,dim_4 %in% gr_19 ~ "85 e mais anos"
+    ,dim_4 %in% gr_20 ~ "Total"
+  )) %>%
+  select(-dim_4,-dim_3,-dim_4_t)%>%
+  group_by(etario)%>%
+  left_join(linkage_geo, by = "municip")%>%
+  filter(dim_3_t == "H" | dim_3_t == "M" )%>%
+  rename(populacao = valor)%>%
+  replace(is.na(.),"Total")
+
+
+fwrite(munucip_pop_age,file = paste0("outputs/munucip_pop_age_long.csv"), bom = T)
+fwrite(munucip_pop_age2,file = paste0("outputs/munucip_pop_age_wide.csv"), bom = T)
+```
+
+
+## Maria - Indicador 0008273 -Done
+
+População residente (N.º) por Local de residência (NUTS - 2013), Sexo e Grupo etário; Anual - 2011- 2020
+
+
+```{r}
+codigos_df <- read_excel("datasets/ref_geo.xlsx")
+# &Dim2=", numbers[i], "
+numbers <-linkage_geo$cod_geo
+
+anos_cod <- c("pop_2011","pop_2012","pop_2013","pop_2014","pop_2015","pop_2016","pop_2017","pop_2018","pop_2019","pop_2020")
+
+years <- c("2011","2012","2013","2014","2015","2016","2017","2018","2019","2020")
+
+l <- length(numbers)
+
+y <- length(years)
+
+t <- length(anos_cod)
+
+result_list <- list()
+
+for (i in 1:l) {
+  result <- fromJSON(paste0("https://www.ine.pt/ine/json_indicador/pindica.jsp?op=2&varcd=0008273&Dim1=T&Dim2=", numbers[i],"&lang=PT"))
+  for (i in 1:y) {
+    pop <- as.data.frame(result$Dados)
+    pop <- pop %>%
+          unnest(years[i])%>%
+          select(geocod,geodsg,dim_3,dim_3_t,dim_4,dim_4_t,valor)
+    result_list[[anos_cod[i]]] <- rbind(result_list[[anos_cod[i]]], pop)
+  }
+  if (i %% 100 == 0) {
+    Sys.sleep(60)
+  }
+}
+for (i in 1:y) {
+  assign(anos_cod[i], result_list[[anos_cod[i]]])%>% mutate(municip = case_when(
+      geocod=="3003101" ~ "Calheta [R.A. Madeira]", 
+      geocod=="2004501" ~ "Calheta [R.A. Açores]",
+      geocod=="2004201" ~ "Lagoa [R.A. Açores]",
+      TRUE ~ as.character(geodsg)))%>%fwrite(file = paste0("outputs/",anos_cod[i],".csv"), bom = T)
+}
+
+```
+
+
+## Maria - Indicador 0003182 - Done
+
+
+```{r}
+
+numbers <-linkage_geo$cod_geo_nuts2002
+numbers 
+
+anos_cod <- c("pop_2001","pop_2002","pop_2003","pop_2004","pop_2005","pop_2006","pop_2007","pop_2008","pop_2009","pop_2010")
+
+years <- c("2001","2002","2003","2004","2005","2006","2007","2008","2009","2010")
+ 
+l <- length(numbers)
+
+y <- length(years)
+
+result_list <- list()
+
+for (i in 1:l) {
+  result <- fromJSON(paste0("https://www.ine.pt/ine/json_indicador/pindica.jsp?op=2&varcd=0003182&Dim1=T&Dim2=", numbers[i], "&lang=PT"))
+  for (i in 1:y) {
+    pop <- as.data.frame(result$Dados)
+    pop <- pop %>%
+          unnest(years[i])%>%
+          select(geocod,geodsg,dim_3,dim_3_t,dim_4,dim_4_t,valor)
+    result_list[[anos_cod[i]]] <- rbind(result_list[[anos_cod[i]]], pop)
+  }
+  if (i %% 100 == 0) {
+    Sys.sleep(60)
+  }
+}
+for (i in 1:y) {
+  assign(anos_cod[i], result_list[[anos_cod[i]]])%>% mutate(municip = case_when(
+      geocod=="3003101" ~ "Calheta [R.A. Madeira]", 
+      geocod=="2004501" ~ "Calheta [R.A. Açores]",
+      geocod=="2004201" ~ "Lagoa [R.A. Açores]",
+      TRUE ~ as.character(geodsg)))%>%fwrite(file = paste0("outputs/",anos_cod[i],".csv"), bom = T)
+}
+```
+
+
+# Tentativa de Extrator Universal de Indicadores do INE para Diagnóstico
+
+O que é suposto:
+
+Definir indicadores a extrair - variável indicador - colocar entre aspas
+
+Pode ser possível extrair os últimos x anos - Definido pela variável X
+
+
+```{r}
+linkage_geo <- read_csv("datasets/linkage_geo.csv")
+  
+linkage_geo <- linkage_geo %>%  
+  select(geo, ars, nuts3, aces2, nuts1, nuts2, cod_geo_nuts2002, cod_geo)  %>%
+  rename(municip="geo")%>%
+  mutate(municip= recode(municip, "Calheta"="Calheta [R.A. Madeira]"))
+
+#indicador <- c()
+
+Indicadores <- read_excel("datasets/Indicadores.xlsx", skip = 14)
+
+Indicadores <- Indicadores %>%
+  filter(`Disponível no Portal`== "Sim")
+
+#indicador <- Indicadores$`Código de difusão`
+
+indicador <- c("0003182")
+
+desag <- "&Dim2="
+
+cod_2002 <-linkage_geo$cod_geo_nuts2002
+cod_2002 <- cod_2002[! cod_2002 %in% c("9999999", "0")]
+
+cod_2014 <- linkage_geo$cod_geo
+cod_2014 <- cod_2014[! cod_2014 %in% c("9999999", "0")]
+
+nuts_ii_cod <- c("PT","11","16","17","18","19","20","30")
+
+actual_year <- year(Sys.Date())
+
+x <- 5
+
+last_yearsv1 <- as.character(c((actual_year-x):(actual_year)))
+
+a <- length(indicador)
+
+b <- length(cod_2014) 
+
+c <- length(nuts_ii_cod)
+ 
+d <- length(last_yearsv1)
+
+counter <- 1
+
+result_list <- list()
+
+#Evitar overload do servidor do INE com requests Colocar sempre antes de um request
+sleep <- function(counter){
+  if (counter %% 100 == 0) {
+    Sys.sleep(60)
+  }
+  counter <- counter+1
+  return(counter)
+} 
+
+save_to_result_list <- function(){
+  #Segundo loop baseado na desagregação maxima conseguida
+    dados <- as.data.frame(result$Dados)
+    colunas_nanos <- colnames(result$Dados)
+    num_colunas <- length(colunas_nanos)
+    last_year <- as.numeric(colunas_nanos[num_colunas])
+    if(d > num_colunas){
+      x <- num_colunas
+    }
+    last_years <- as.character(c((last_year-x):(last_year)))
+    each_df <- dados %>%
+      select(last_years[i])%>%
+      unnest(last_years[i])
+    colunas_por_ano <- colnames(each_df)
+    for (i in 1:x) {
+    #ver e retirar os nomes das colunas de cada ano para o select
+    dados1 <- dados %>%
+          unnest(last_years[i])%>%
+          select(all_of(colunas_por_ano))
+    result_list[[last_years[i]]] <- rbind(result_list[[last_years[i]]], dados1)
+    }
+}
+
+write_output <- function(){
+  x <- length(as.data.frame(result_list))
+  for (i in 1:x) {
+    nomedf <- paste0(indicador_atual,"_",last_years[i])
+    assign(full_df, result_list[[last_years[i]]])%>% 
+      mutate(municip = case_when(
+      geocod=="3003101" ~ "Calheta [R.A. Madeira]", 
+      geocod=="2004501" ~ "Calheta [R.A. Açores]",
+      geocod=="2004201" ~ "Lagoa [R.A. Açores]",
+      TRUE ~ as.character(geodsg)))%>%
+      fwrite(file = paste0("outputs/",nomedf,".csv"), bom = T)
+  }
+  #result_list <- list()
+}
+
+for (i in 1:a) {
+  indicador_atual <- indicador[i]
+  for (i in b) {
+  #retirar indicador com desagregação municipio 2014
+  counter <- sleep(counter)
+  result <- fromJSON(paste0("https://www.ine.pt/ine/json_indicador/pindica.jsp?op=2&varcd=",indicador_atual,"&Dim1=T", desag, cod_2014[i], "&lang=PT"))
+  number_results_loop <- length(c(1:b))
+  #Chack if result exists - Se sim vai começar a fazer assign se não tenta fazer com agregação menor
+      if (!("IndicadorCod" %in% colnames(result))) {
+        #retirar indicador com desagregação municipio 2002
+        for (i in 1:b) {
+        counter <- sleep(counter)
+        result <- fromJSON(paste0("https://www.ine.pt/ine/json_indicador/pindica.jsp?op=2&varcd=",indicador_atual,"&Dim1=T",desag, cod_2002[i], "&lang=PT"))
+        number_results_loop <- length(c(1:b))
+        }
+          if (!("IndicadorCod" %in% colnames(result))) {
+            #retirar indicador com desagregação NUTSII 
+            for (i in 1:c) {
+            counter <- sleep(counter)
+            result <- fromJSON(paste0("https://www.ine.pt/ine/json_indicador/pindica.jsp?op=2&varcd=",indicador_atual ,"&Dim1=T",desag, nuts_ii_cod[i], "&lang=PT"))
+            number_results_loop <- length(c(1:c))
+            } 
+                if (!("IndicadorCod" %in% colnames(result))) {
+                  #retirar indicador sem desagragação 
+                  counter <- sleep(counter)
+                  result <- fromJSON(paste0("https://www.ine.pt/ine/json_indicador/pindica.jsp?op=2&varcd=",indicador_atual,"&Dim1=T&lang=PT"))
+                  number_results_loop <- length(c(1:c))
+          }
+        }
+      }
+    
+  #se o result tiver dados - grava para a results_list
+  if(length(result)>0){
+    dados <- as.data.frame(result$Dados)
+    colunas_nanos <- colnames(result$Dados)
+    num_colunas <- length(colunas_nanos)
+    last_year <- as.numeric(colunas_nanos[num_colunas])
+    if(d > num_colunas){
+      x <- num_colunas
+    }
+    last_years <- as.character(c((last_year-x):(last_year)))
+    each_df <- dados %>%
+      select(last_years[i])%>%
+      unnest(last_years[i])
+    colunas_por_ano <- colnames(each_df)
+    for (i in 1:x) {
+    #ver e retirar os nomes das colunas de cada ano para o select
+    dados1 <- dados %>%
+          unnest(last_years[i])%>%
+          select(all_of(colunas_por_ano))
+    result_list[[last_years[i]]] <- rbind(result_list[[last_years[i]]], dados1)
+    }
+      x <- length(as.data.frame(result_list))
+  for (i in 1:x) {
+    nomedf <- paste0(indicador_atual,"_",last_years[i])
+    assign(full_df, result_list[[last_years[i]]])%>% 
+      mutate(municip = case_when(
+      geocod=="3003101" ~ "Calheta [R.A. Madeira]", 
+      geocod=="2004501" ~ "Calheta [R.A. Açores]",
+      geocod=="2004201" ~ "Lagoa [R.A. Açores]",
+      TRUE ~ as.character(geodsg)))%>%
+      fwrite(file = paste0("outputs/",nomedf,".csv"), bom = T)
+      }
+    }
+  }
+}
+
+```
+

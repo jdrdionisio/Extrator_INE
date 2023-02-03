@@ -1,0 +1,36 @@
+"0","codigos_df <- read_excel(""datasets/ref_geo.xlsx"")"
+"0","# &Dim2="", numbers[i], """
+"0","numbers <-linkage_geo$cod_geo"
+"0",""
+"0","anos_cod <- c(""pop_2011"",""pop_2012"",""pop_2013"",""pop_2014"",""pop_2015"",""pop_2016"",""pop_2017"",""pop_2018"",""pop_2019"",""pop_2020"")"
+"0",""
+"0","years <- c(""2011"",""2012"",""2013"",""2014"",""2015"",""2016"",""2017"",""2018"",""2019"",""2020"")"
+"0",""
+"0","l <- length(numbers)"
+"0",""
+"0","y <- length(years)"
+"0",""
+"0","t <- length(anos_cod)"
+"0",""
+"0","result_list <- list()"
+"0",""
+"0","for (i in 1:l) {"
+"0","  result <- fromJSON(paste0(""https://www.ine.pt/ine/json_indicador/pindica.jsp?op=2&varcd=0008273&Dim1=T&Dim2="", numbers[i],""&lang=PT""))"
+"0","  for (i in 1:y) {"
+"0","    pop <- as.data.frame(result$Dados)"
+"0","    pop <- pop %>%"
+"0","          unnest(years[i])%>%"
+"0","          select(geocod,geodsg,dim_3,dim_3_t,dim_4,dim_4_t,valor)"
+"0","    result_list[[anos_cod[i]]] <- rbind(result_list[[anos_cod[i]]], pop)"
+"0","  }"
+"0","  if (i %% 100 == 0) {"
+"0","    Sys.sleep(60)"
+"0","  }"
+"0","}"
+"1","[1m[33mError[39m in `unnest()`:[22m
+[33m![39m Can't subset columns that don't exist.
+[31m✖[39m Column `2011` doesn't exist.
+Backtrace:
+[90m 1. [39mpop %>% unnest(years[i]) %>% ...
+[90m 4. [39m[1m[94mtidyr:::unnest.data.frame([39m[22m., years[i][1m[94m)[39m[22m
+"
