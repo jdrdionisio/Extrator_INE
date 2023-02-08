@@ -64,9 +64,9 @@ Indicadores <- Indicadores %>%
 
 #https://www.ine.pt/ine/json_indicador/pindica.jsp?op=2&varcd=0011613&Dim1=T&lang=PT
 
-# numbers <- Indicadores$`Código de difusão`
-# l <- length(numbers)
-# 
+numbers <- Indicadores$`Código de difusão`
+l <- length(numbers)
+
 # for(i in 1:5 ){
 #     result <- fromJSON(paste0("https://www.ine.pt/ine/json_indicador/pindica.jsp?op=2&varcd=",numbers[i],"&Dim1=T&lang=PT"))
 #   if (!("IndicadorCod" %in% colnames(result))) {
@@ -99,7 +99,7 @@ for(i in 1:l ){
     result<- fromJSON(paste0("https://www.ine.pt/ine/json_indicador/pindica.jsp?op=2&varcd=0011626&Dim1=T&Dim2=",numbers[i],"&lang=PT"))
     pop <- as.data.frame(result$Dados$'2021')
    if (i %% 99 == 0) {
-      Sys.sleep(60)
+      Sys.sleep(15)
    }
   if(i==1){
   d2 <- pop
@@ -384,8 +384,8 @@ result_list <- list()
 
 #Evitar overload do servidor do INE com requests Colocar sempre antes de um request
 sleep <- function(z){
-  if (z %% 30 == 0) {
-    Sys.sleep(60)
+  if (z %% 100 == 0) {
+    Sys.sleep(15)
     z <- 1
   }else{
       z <- z+1
@@ -438,13 +438,15 @@ sleep <- function(z){
 ```
 
 ```{r, echo = TRUE}
+
+
 for (i in 1:a) {
   indicador_atual <- indicador[i]
   counter <- sleep(counter)
   result <- fromJSON(paste0("https://www.ine.pt/ine/json_indicador/pindica.jsp?op=2&varcd=",indicador_atual,"&Dim1=T", desag, cod_2014[79], "&lang=PT"))
   result <- as.data.frame(result)
   if (("IndicadorCod" %in% colnames(result))){ 
-  for (w in 1:10) {
+  for (w in 1:b) {
   #retirar indicador com desagregação municipio 2014
   counter <- sleep(counter)
   result <- fromJSON(paste0("https://www.ine.pt/ine/json_indicador/pindica.jsp?op=2&varcd=",indicador_atual,"&Dim1=T", desag, cod_2014[w], "&lang=PT"))
@@ -470,14 +472,18 @@ for (i in 1:a) {
         select(all_of(colunas_por_ano))
     result_list[[last_years[i]]] <- rbind(result_list[[last_years[i]]], dados1)
   Sys.sleep(2)
-  }}}
+    }}
+    if (w %% 100 == 0) {
+      print(cod_2014[w])
+   }
+    }
   else if(length(result_list)==0){
   counter <- sleep(counter)
   result <- fromJSON(paste0("https://www.ine.pt/ine/json_indicador/pindica.jsp?op=2&varcd=",indicador_atual,"&Dim1=T",desag, cod_2002[1], "&lang=PT"))
   result <- as.data.frame(result)
   if (("IndicadorCod" %in% colnames(result))) {
   #retirar indicador com desagregação municipio 2002
-  for (e in 1:10) {
+  for (e in 1:b) {
   counter <- sleep(counter)
   result <- fromJSON(paste0("https://www.ine.pt/ine/json_indicador/pindica.jsp?op=2&varcd=",indicador_atual,"&Dim1=T",desag, cod_2002[e], "&lang=PT"))
   agreg <- "NUTSIII"
@@ -503,7 +509,10 @@ for (i in 1:a) {
         select(all_of(colunas_por_ano))
     result_list[[last_years[i]]] <- rbind(result_list[[last_years[i]]], dados1)
   Sys.sleep(2)
-  }
+    }
+    if (e %% 100 == 0) {
+      print(cod_2014[e])
+   }
   }
   }
   }
@@ -587,5 +596,8 @@ for (i in 1:a) {
       fwrite(file = paste0("outputs/",nomedf,".csv"), bom = T)
   }
   }
+  if (i == i) {
+      print(indicador_atual)
+   }
 }
 ```
