@@ -131,9 +131,13 @@ linkage_geo <- read_csv("datasets/linkage_geo.csv")
 linkage_geo <- linkage_geo %>%
   select(geo, ars, nuts3, aces2, nuts1, nuts2, cod_geo_nuts2002, cod_geo)  %>%
   rename(municip="geo")%>%
-  mutate(municip= recode(municip, "Calheta"="Calheta [R.A. Madeira]"))
+  mutate(municip= recode(municip, "Calheta"="Calheta [R.A. Madeira]"))%>%
+  mutate(last_4 = substr(cod_geo, nchar(cod_geo)-3,nchar(cod_geo)))
 
-
+linkage_geo_freg <- read_csv2("datasets/categorias_geo_freg.csv")%>%
+  select(-municip)%>%
+  rename(last_4 =pair)%>%
+  left_join(linkage_geo,by = "last_4" )
 ```
 
 Pivot Individual
