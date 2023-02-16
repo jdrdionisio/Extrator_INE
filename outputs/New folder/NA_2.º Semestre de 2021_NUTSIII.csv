@@ -1,0 +1,259 @@
+﻿geocod,geodsg,valor,sinal_conv,sinal_conv_desc,municip,ars,nuts3,aces2,nuts1,nuts2,cod_geo_nuts2002
+1111601,Arcos de Valdevez,3.19,,,Arcos de Valdevez,Norte,Alto Minho,ULS Alto Minho,Continente,Norte,1111601
+1111602,Caminha,4.21,,,Caminha,Norte,Alto Minho,ULS Alto Minho,Continente,Norte,1111602
+1111603,Melgaço,,-,Dado nulo ou não aplicável,Melgaço,Norte,Alto Minho,ULS Alto Minho,Continente,Norte,1111603
+1111604,Monção,3.78,,,Monção,Norte,Alto Minho,ULS Alto Minho,Continente,Norte,1111604
+1111605,Paredes de Coura,,-,Dado nulo ou não aplicável,Paredes de Coura,Norte,Alto Minho,ULS Alto Minho,Continente,Norte,1111605
+1111606,Ponte da Barca,3.03,,,Ponte da Barca,Norte,Alto Minho,ULS Alto Minho,Continente,Norte,1111606
+1111607,Ponte de Lima,3.7,,,Ponte de Lima,Norte,Alto Minho,ULS Alto Minho,Continente,Norte,1111607
+1111608,Valença,3.76,,,Valença,Norte,Alto Minho,ULS Alto Minho,Continente,Norte,1111608
+1111609,Viana do Castelo,4.88,,,Viana do Castelo,Norte,Alto Minho,ULS Alto Minho,Continente,Norte,1111609
+1111610,Vila Nova de Cerveira,3.39,,,Vila Nova de Cerveira,Norte,Alto Minho,ULS Alto Minho,Continente,Norte,1111610
+1120301,Amares,3.61,,,Amares,Norte,Cávado,ACeS Gerês/Cabreira,Continente,Norte,1120301
+1120302,Barcelos,4,,,Barcelos,Norte,Cávado,ACeS Barcelos/Esposende,Continente,Norte,1120302
+1120303,Braga,5.34,,,Braga,Norte,Cávado,ACeS Braga,Continente,Norte,1120303
+1120306,Esposende,4.75,,,Esposende,Norte,Cávado,ACeS Barcelos/Esposende,Continente,Norte,1120306
+1120310,Terras de Bouro,,-,Dado nulo ou não aplicável,Terras de Bouro,Norte,Cávado,ACeS Gerês/Cabreira,Continente,Norte,1120310
+1120313,Vila Verde,3.82,,,Vila Verde,Norte,Cávado,ACeS Gerês/Cabreira,Continente,Norte,1120313
+1190304,Cabeceiras de Basto,2.69,,,Cabeceiras de Basto,Norte,Ave,ACeS Guimarães/Vizela/Terras de Basto,Continente,Norte,1150304
+1190307,Fafe,3.04,,,Fafe,Norte,Ave,ACeS Guimarães/Vizela/Terras de Basto,Continente,Norte,1130307
+1190308,Guimarães,4.06,,,Guimarães,Norte,Ave,ACeS Guimarães/Vizela/Terras de Basto,Continente,Norte,1130308
+1191705,Mondim de Basto,,-,Dado nulo ou não aplicável,Mondim de Basto,Norte,Ave,ACeS Guimarães/Vizela/Terras de Basto,Continente,Norte,1151705
+1190309,Póvoa de Lanhoso,3.14,,,Póvoa de Lanhoso,Norte,Ave,ACeS Gerês/Cabreira,Continente,Norte,1130309
+1190311,Vieira do Minho,,-,Dado nulo ou não aplicável,Vieira do Minho,Norte,Ave,ACeS Gerês/Cabreira,Continente,Norte,1130311
+1190312,Vila Nova de Famalicão,4.33,,,Vila Nova de Famalicão,Norte,Ave,ACeS Famalicão,Continente,Norte,1130312
+1190314,Vizela,3.8,,,Vizela,Norte,Ave,ACeS Guimarães/Vizela/Terras de Basto,Continente,Norte,1130314
+11A0104,Arouca,3.64,,,Arouca,Norte,Área Metropolitana do Porto,ACeS Feira/Arouca,Continente,Norte,1160104
+11A0107,Espinho,5.84,,,Espinho,Norte,Área Metropolitana do Porto,ACeS Gaia e Espinho/Gaia,Continente,Norte,1140107
+11A1304,Gondomar,5.78,,,Gondomar,Norte,Área Metropolitana do Porto,ACeS Gondomar,Continente,Norte,1141304
+11A1306,Maia,6.35,,,Maia,Norte,Área Metropolitana do Porto,ACeS Maia/Valongo,Continente,Norte,1141306
+11A1308,Matosinhos,7.83,,,Matosinhos,Norte,Área Metropolitana do Porto,ULS Matosinhos,Continente,Norte,1141308
+11A0113,Oliveira de Azeméis,3.59,,,Oliveira de Azeméis,Norte,Área Metropolitana do Porto,ACeS Aveiro Norte,Continente,Norte,1160113
+11A1310,Paredes,3.75,,,Paredes,Norte,Área Metropolitana do Porto,ACeS Vale do Sousa Sul,Continente,Norte,1151310
+11A1312,Porto,8.85,,,Porto,Norte,Área Metropolitana do Porto,ACeS Porto Ocidental e Porto Oriental,Continente,Norte,1141312
+11A1313,Póvoa de Varzim,5.67,,,Póvoa de Varzim,Norte,Área Metropolitana do Porto,ACeS Póvoa de Varzim/Vila do Conde,Continente,Norte,1141313
+11A0109,Santa Maria da Feira,4.29,,,Santa Maria da Feira,Norte,Área Metropolitana do Porto,ACeS Feira/Arouca,Continente,Norte,1160109
+11A1314,Santo Tirso,3.91,,,Santo Tirso,Norte,Área Metropolitana do Porto,ACeS Santo Tirso/Trofa,Continente,Norte,1131314
+11A0116,São João da Madeira,4.49,,,São João da Madeira,Norte,Área Metropolitana do Porto,ACeS Aveiro Norte,Continente,Norte,1160116
+11A1318,Trofa,4.65,,,Trofa,Norte,Área Metropolitana do Porto,ACeS Santo Tirso/Trofa,Continente,Norte,1131318
+11A0119,Vale de Cambra,3.44,,,Vale de Cambra,Norte,Área Metropolitana do Porto,ACeS Aveiro Norte,Continente,Norte,1160119
+11A1315,Valongo,5.76,,,Valongo,Norte,Área Metropolitana do Porto,ACeS Maia/Valongo,Continente,Norte,1141315
+11A1316,Vila do Conde,5.11,,,Vila do Conde,Norte,Área Metropolitana do Porto,ACeS Póvoa de Varzim/Vila do Conde,Continente,Norte,1141316
+11A1317,Vila Nova de Gaia,6.83,,,Vila Nova de Gaia,Norte,Área Metropolitana do Porto,ACeS Gaia e Espinho/Gaia,Continente,Norte,1141317
+11B1702,Boticas,,-,Dado nulo ou não aplicável,Boticas,Norte,Alto Tâmega,ACeS Alto Tâmega e Barroso,Continente,Norte,1181702
+11B1703,Chaves,3.8,,,Chaves,Norte,Alto Tâmega,ACeS Alto Tâmega e Barroso,Continente,Norte,1181703
+11B1706,Montalegre,,-,Dado nulo ou não aplicável,Montalegre,Norte,Alto Tâmega,ACeS Alto Tâmega e Barroso,Continente,Norte,1181706
+11B1709,Ribeira de Pena,,-,Dado nulo ou não aplicável,Ribeira de Pena,Norte,Alto Tâmega,ACeS Alto Tâmega e Barroso,Continente,Norte,1151709
+11B1712,Valpaços,2.37,,,Valpaços,Norte,Alto Tâmega,ACeS Alto Tâmega e Barroso,Continente,Norte,1181712
+11B1713,Vila Pouca de Aguiar,,-,Dado nulo ou não aplicável,Vila Pouca de Aguiar,Norte,Alto Tâmega,ACeS Alto Tâmega e Barroso,Continente,Norte,1181713
+11C1301,Amarante,3.02,,,Amarante,Norte,Tâmega e Sousa,ACeS Baixo Tâmega,Continente,Norte,1151301
+11C1302,Baião,2.77,,,Baião,Norte,Tâmega e Sousa,ACeS Baixo Tâmega,Continente,Norte,1151302
+11C0106,Castelo de Paiva,,-,Dado nulo ou não aplicável,Castelo de Paiva,Norte,Tâmega e Sousa,ACeS Vale do Sousa Sul,Continente,Norte,1150106
+11C0305,Celorico de Basto,2.79,,,Celorico de Basto,Norte,Tâmega e Sousa,ACeS Baixo Tâmega,Continente,Norte,1150305
+11C1804,Cinfães,3.06,,,Cinfães,Norte,Tâmega e Sousa,ACeS Baixo Tâmega,Continente,Norte,1151804
+11C1303,Felgueiras,2.79,,,Felgueiras,Norte,Tâmega e Sousa,ACeS Vale do Sousa Norte,Continente,Norte,1151303
+11C1305,Lousada,2.7,,,Lousada,Norte,Tâmega e Sousa,ACeS Vale do Sousa Norte,Continente,Norte,1151305
+11C1307,Marco de Canaveses,2.88,,,Marco de Canaveses,Norte,Tâmega e Sousa,ACeS Baixo Tâmega,Continente,Norte,1151307
+11C1309,Paços de Ferreira,3.37,,,Paços de Ferreira,Norte,Tâmega e Sousa,ACeS Vale do Sousa Norte,Continente,Norte,1151309
+11C1311,Penafiel,3.45,,,Penafiel,Norte,Tâmega e Sousa,ACeS Vale do Sousa Sul,Continente,Norte,1151311
+11C1813,Resende,,-,Dado nulo ou não aplicável,Resende,Norte,Tâmega e Sousa,ACeS Baixo Tâmega,Continente,Norte,1151813
+11D1701,Alijó,,-,Dado nulo ou não aplicável,Alijó,Norte,Douro,ACeS Marão e Douro Norte,Continente,Norte,1171701
+11D1801,Armamar,,-,Dado nulo ou não aplicável,Armamar,Norte,Douro,ACeS Douro Sul,Continente,Norte,1171801
+11D0403,Carrazeda de Ansiães,,-,Dado nulo ou não aplicável,Carrazeda de Ansiães,Norte,Douro,ULS Nordeste,Continente,Norte,1170403
+11D0404,Freixo de Espada à Cinta,,-,Dado nulo ou não aplicável,Freixo de Espada à Cinta,Norte,Douro,ULS Nordeste,Continente,Norte,1170404
+11D1805,Lamego,2.63,,,Lamego,Norte,Douro,ACeS Douro Sul,Continente,Norte,1171805
+11D1704,Mesão Frio,,-,Dado nulo ou não aplicável,Mesão Frio,Norte,Douro,ACeS Marão e Douro Norte,Continente,Norte,1171704
+11D1807,Moimenta da Beira,2.35,,,Moimenta da Beira,Norte,Douro,ACeS Douro Sul,Continente,Norte,1171807
+11D1707,Murça,,-,Dado nulo ou não aplicável,Murça,Norte,Douro,ACeS Marão e Douro Norte,Continente,Norte,1181707
+11D1812,Penedono,,-,Dado nulo ou não aplicável,Penedono,Norte,Douro,ACeS Douro Sul,Continente,Norte,1171812
+11D1708,Peso da Régua,3.53,,,Peso da Régua,Norte,Douro,ACeS Marão e Douro Norte,Continente,Norte,1171708
+11D1710,Sabrosa,,-,Dado nulo ou não aplicável,Sabrosa,Norte,Douro,ACeS Marão e Douro Norte,Continente,Norte,1171710
+11D1711,Santa Marta de Penaguião,,-,Dado nulo ou não aplicável,Santa Marta de Penaguião,Norte,Douro,ACeS Marão e Douro Norte,Continente,Norte,1171711
+11D1815,São João da Pesqueira,,-,Dado nulo ou não aplicável,São João da Pesqueira,Norte,Douro,ACeS Douro Sul,Continente,Norte,1171815
+11D1818,Sernancelhe,,-,Dado nulo ou não aplicável,Sernancelhe,Norte,Douro,ACeS Douro Sul,Continente,Norte,1171818
+11D1819,Tabuaço,,-,Dado nulo ou não aplicável,Tabuaço,Norte,Douro,ACeS Douro Sul,Continente,Norte,1171819
+11D1820,Tarouca,,-,Dado nulo ou não aplicável,Tarouca,Norte,Douro,ACeS Douro Sul,Continente,Norte,1171820
+11D0409,Torre de Moncorvo,,-,Dado nulo ou não aplicável,Torre de Moncorvo,Norte,Douro,ULS Nordeste,Continente,Norte,1170409
+11D0914,Vila Nova de Foz Côa,2.02,,,Vila Nova de Foz Côa,Centro,Douro,ULS Guarda,Continente,Norte,1170914
+11D1714,Vila Real,3.88,,,Vila Real,Norte,Douro,ACeS Marão e Douro Norte,Continente,Norte,1171714
+11E0401,Alfândega da Fé,,-,Dado nulo ou não aplicável,Alfândega da Fé,Norte,Terras de Trás-os-Montes,ULS Nordeste,Continente,Norte,1180401
+11E0402,Bragança,2.78,,,Bragança,Norte,Terras de Trás-os-Montes,ULS Nordeste,Continente,Norte,1180402
+11E0405,Macedo de Cavaleiros,2.34,,,Macedo de Cavaleiros,Norte,Terras de Trás-os-Montes,ULS Nordeste,Continente,Norte,1180405
+11E0406,Miranda do Douro,,-,Dado nulo ou não aplicável,Miranda do Douro,Norte,Terras de Trás-os-Montes,ULS Nordeste,Continente,Norte,1180406
+11E0407,Mirandela,2.89,,,Mirandela,Norte,Terras de Trás-os-Montes,ULS Nordeste,Continente,Norte,1180407
+11E0408,Mogadouro,,-,Dado nulo ou não aplicável,Mogadouro,Norte,Terras de Trás-os-Montes,ULS Nordeste,Continente,Norte,1180408
+11E0410,Vila Flor,,-,Dado nulo ou não aplicável,Vila Flor,Norte,Terras de Trás-os-Montes,ULS Nordeste,Continente,Norte,1170410
+11E0411,Vimioso,,-,Dado nulo ou não aplicável,Vimioso,Norte,Terras de Trás-os-Montes,ULS Nordeste,Continente,Norte,1180411
+11E0412,Vinhais,,-,Dado nulo ou não aplicável,Vinhais,Norte,Terras de Trás-os-Montes,ULS Nordeste,Continente,Norte,1180412
+16B1001,Alcobaça,4.13,,,Alcobaça,Lisboa e Vale do Tejo,Oeste,ACeS Oeste Norte,Continente,Centro,16B1001
+16B1101,Alenquer,5.3,,,Alenquer,Lisboa e Vale do Tejo,Oeste,ACeS Estuário do Tejo,Continente,Centro,16B1101
+16B1102,Arruda dos Vinhos,5.38,,,Arruda dos Vinhos,Lisboa e Vale do Tejo,Oeste,ACeS Estuário do Tejo,Continente,Centro,16B1102
+16B1005,Bombarral,3.64,,,Bombarral,Lisboa e Vale do Tejo,Oeste,ACeS Oeste Norte,Continente,Centro,16B1005
+16B1104,Cadaval,3.62,,,Cadaval,Lisboa e Vale do Tejo,Oeste,ACeS Oeste Sul,Continente,Centro,16B1104
+16B1006,Caldas da Rainha,4.86,,,Caldas da Rainha,Lisboa e Vale do Tejo,Oeste,ACeS Oeste Norte,Continente,Centro,16B1006
+16B1108,Lourinhã,4.45,,,Lourinhã,Lisboa e Vale do Tejo,Oeste,ACeS Oeste Sul,Continente,Centro,16B1108
+16B1011,Nazaré,4.67,,,Nazaré,Lisboa e Vale do Tejo,Oeste,ACeS Oeste Norte,Continente,Centro,16B1011
+16B1012,Óbidos,3.95,,,Óbidos,Lisboa e Vale do Tejo,Oeste,ACeS Oeste Norte,Continente,Centro,16B1012
+16B1014,Peniche,4.64,,,Peniche,Lisboa e Vale do Tejo,Oeste,ACeS Oeste Norte,Continente,Centro,16B1014
+16B1112,Sobral de Monte Agraço,4.71,,,Sobral de Monte Agraço,Lisboa e Vale do Tejo,Oeste,ACeS Oeste Sul,Continente,Centro,16B1112
+16B1113,Torres Vedras,5.68,,,Torres Vedras,Lisboa e Vale do Tejo,Oeste,ACeS Oeste Sul,Continente,Centro,16B1113
+16D0101,Águeda,4.07,,,Águeda,Centro,Região de Aveiro,ACeS Baixo Vouga,Continente,Centro,1610101
+16D0102,Albergaria-a-Velha,3.92,,,Albergaria-a-Velha,Centro,Região de Aveiro,ACeS Baixo Vouga,Continente,Centro,1610102
+16D0103,Anadia,3.8,,,Anadia,Centro,Região de Aveiro,ACeS Baixo Vouga,Continente,Centro,1610103
+16D0105,Aveiro,6.25,,,Aveiro,Centro,Região de Aveiro,ACeS Baixo Vouga,Continente,Centro,1610105
+16D0108,Estarreja,4.03,,,Estarreja,Centro,Região de Aveiro,ACeS Baixo Vouga,Continente,Centro,1610108
+16D0110,Ílhavo,5.18,,,Ílhavo,Centro,Região de Aveiro,ACeS Baixo Vouga,Continente,Centro,1610110
+16D0112,Murtosa,3.79,,,Murtosa,Centro,Região de Aveiro,ACeS Baixo Vouga,Continente,Centro,1610112
+16D0114,Oliveira do Bairro,3.83,,,Oliveira do Bairro,Centro,Região de Aveiro,ACeS Baixo Vouga,Continente,Centro,1610114
+16D0115,Ovar,4.57,,,Ovar,Centro,Região de Aveiro,ACeS Baixo Vouga,Continente,Centro,1610115
+16D0117,Sever do Vouga,2.85,,,Sever do Vouga,Centro,Região de Aveiro,ACeS Baixo Vouga,Continente,Centro,1610117
+16D0118,Vagos,3.81,,,Vagos,Centro,Região de Aveiro,ACeS Baixo Vouga,Continente,Centro,1610118
+16E0601,Arganil,2.76,,,Arganil,Centro,Região de Coimbra,ACeS Pinhal Interior Norte,Continente,Centro,1640601
+16E0602,Cantanhede,3.64,,,Cantanhede,Centro,Região de Coimbra,ACeS Baixo Mondego,Continente,Centro,1620602
+16E0603,Coimbra,5.9,,,Coimbra,Centro,Região de Coimbra,ACeS Baixo Mondego,Continente,Centro,1620603
+16E0604,Condeixa-a-Nova,4.21,,,Condeixa-a-Nova,Centro,Região de Coimbra,ACeS Baixo Mondego,Continente,Centro,1620604
+16E0605,Figueira da Foz,4.79,,,Figueira da Foz,Centro,Região de Coimbra,ACeS Baixo Mondego,Continente,Centro,1620605
+16E0606,Góis,,-,Dado nulo ou não aplicável,Góis,Centro,Região de Coimbra,ACeS Pinhal Interior Norte,Continente,Centro,1640606
+16E0607,Lousã,3.4,,,Lousã,Centro,Região de Coimbra,ACeS Pinhal Interior Norte,Continente,Centro,1640607
+16E0111,Mealhada,3.73,,,Mealhada,Centro,Região de Coimbra,ACeS Baixo Mondego,Continente,Centro,1610111
+16E0608,Mira,3.18,,,Mira,Centro,Região de Coimbra,ACeS Baixo Mondego,Continente,Centro,1620608
+16E0609,Miranda do Corvo,3.2,,,Miranda do Corvo,Centro,Região de Coimbra,ACeS Pinhal Interior Norte,Continente,Centro,1640609
+16E0610,Montemor-o-Velho,3.75,,,Montemor-o-Velho,Centro,Região de Coimbra,ACeS Baixo Mondego,Continente,Centro,1620610
+16E1808,Mortágua,2.66,,,Mortágua,Centro,Região de Coimbra,ACeS Baixo Mondego,Continente,Centro,1651808
+16E0611,Oliveira do Hospital,2.78,,,Oliveira do Hospital,Centro,Região de Coimbra,ACeS Pinhal Interior Norte,Continente,Centro,1640611
+16E0612,Pampilhosa da Serra,,-,Dado nulo ou não aplicável,Pampilhosa da Serra,Centro,Região de Coimbra,ACeS Pinhal Interior Norte,Continente,Centro,1640612
+16E0613,Penacova,,-,Dado nulo ou não aplicável,Penacova,Centro,Região de Coimbra,ACeS Baixo Mondego,Continente,Centro,1620613
+16E0614,Penela,,-,Dado nulo ou não aplicável,Penela,Centro,Região de Coimbra,ACeS Pinhal Interior Norte,Continente,Centro,1640614
+16E0615,Soure,3.36,,,Soure,Centro,Região de Coimbra,ACeS Baixo Mondego,Continente,Centro,1620615
+16E0616,Tábua,2.71,,,Tábua,Centro,Região de Coimbra,ACeS Pinhal Interior Norte,Continente,Centro,1640616
+16E0617,Vila Nova de Poiares,3,,,Vila Nova de Poiares,Centro,Região de Coimbra,ACeS Pinhal Interior Norte,Continente,Centro,1640617
+16F1002,Alvaiázere,,-,Dado nulo ou não aplicável,Alvaiázere,Centro,Região de Leiria,ACeS Pinhal Interior Norte,Continente,Centro,1641002
+16F1003,Ansião,2.83,,,Ansião,Centro,Região de Leiria,ACeS Pinhal Interior Norte,Continente,Centro,1641003
+16F1004,Batalha,3.81,,,Batalha,Centro,Região de Leiria,ACeS Pinhal Litoral,Continente,Centro,1631004
+16F1007,Castanheira de Pêra,,-,Dado nulo ou não aplicável,Castanheira de Pêra,Centro,Região de Leiria,ACeS Pinhal Interior Norte,Continente,Centro,1641007
+16F1008,Figueiró dos Vinhos,,-,Dado nulo ou não aplicável,Figueiró dos Vinhos,Centro,Região de Leiria,ACeS Pinhal Interior Norte,Continente,Centro,1641008
+16F1009,Leiria,4.81,,,Leiria,Centro,Região de Leiria,ACeS Pinhal Litoral,Continente,Centro,1631009
+16F1010,Marinha Grande,4.21,,,Marinha Grande,Centro,Região de Leiria,ACeS Pinhal Litoral,Continente,Centro,1631010
+16F1013,Pedrógão Grande,,-,Dado nulo ou não aplicável,Pedrógão Grande,Centro,Região de Leiria,ACeS Pinhal Interior Norte,Continente,Centro,1641013
+16F1015,Pombal,3.72,,,Pombal,Centro,Região de Leiria,ACeS Pinhal Litoral,Continente,Centro,1631015
+16F1016,Porto de Mós,3.22,,,Porto de Mós,Centro,Região de Leiria,ACeS Pinhal Litoral,Continente,Centro,1631016
+16G0901,Aguiar da Beira,,-,Dado nulo ou não aplicável,Aguiar da Beira,Centro,Viseu Dão Lafões,ACeS Dão Lafões,Continente,Centro,1650901
+16G1802,Carregal do Sal,2.78,,,Carregal do Sal,Centro,Viseu Dão Lafões,ACeS Dão Lafões,Continente,Centro,1651802
+16G1803,Castro Daire,2.62,,,Castro Daire,Centro,Viseu Dão Lafões,ACeS Dão Lafões,Continente,Centro,1651803
+16G1806,Mangualde,3,,,Mangualde,Centro,Viseu Dão Lafões,ACeS Dão Lafões,Continente,Centro,1651806
+16G1809,Nelas,2.89,,,Nelas,Centro,Viseu Dão Lafões,ACeS Dão Lafões,Continente,Centro,1651809
+16G1810,Oliveira de Frades,2.68,,,Oliveira de Frades,Centro,Viseu Dão Lafões,ACeS Dão Lafões,Continente,Centro,1651810
+16G1811,Penalva do Castelo,,-,Dado nulo ou não aplicável,Penalva do Castelo,Centro,Viseu Dão Lafões,ACeS Dão Lafões,Continente,Centro,1651811
+16G1814,Santa Comba Dão,2.89,,,Santa Comba Dão,Centro,Viseu Dão Lafões,ACeS Dão Lafões,Continente,Centro,1651814
+16G1816,São Pedro do Sul,3.58,,,São Pedro do Sul,Centro,Viseu Dão Lafões,ACeS Dão Lafões,Continente,Centro,1651816
+16G1817,Sátão,2.37,,,Sátão,Centro,Viseu Dão Lafões,ACeS Dão Lafões,Continente,Centro,1651817
+16G1821,Tondela,3.74,,,Tondela,Centro,Viseu Dão Lafões,ACeS Dão Lafões,Continente,Centro,1651821
+16G1822,Vila Nova de Paiva,,-,Dado nulo ou não aplicável,Vila Nova de Paiva,Centro,Viseu Dão Lafões,ACeS Dão Lafões,Continente,Centro,1651822
+16G1823,Viseu,4.3,,,Viseu,Centro,Viseu Dão Lafões,ACeS Dão Lafões,Continente,Centro,1651823
+16G1824,Vouzela,,-,Dado nulo ou não aplicável,Vouzela,Centro,Viseu Dão Lafões,ACeS Dão Lafões,Continente,Centro,1651824
+16H0502,Castelo Branco,3.43,,,Castelo Branco,Centro,Beira Baixa,ACeS Beira Interior Sul (ULS Castelo Branco),Continente,Centro,1690502
+16H0505,Idanha-a-Nova,,-,Dado nulo ou não aplicável,Idanha-a-Nova,Centro,Beira Baixa,ACeS Beira Interior Sul (ULS Castelo Branco),Continente,Centro,1690505
+16H0506,Oleiros,,-,Dado nulo ou não aplicável,Oleiros,Centro,Beira Baixa,ACeS Pinhal Interior Sul (ULS Castelo Branco),Continente,Centro,1660506
+16H0507,Penamacor,,-,Dado nulo ou não aplicável,Penamacor,Centro,Beira Baixa,ACeS Beira Interior Sul (ULS Castelo Branco),Continente,Centro,1690507
+16H0508,Proença-a-Nova,,-,Dado nulo ou não aplicável,Proença-a-Nova,Centro,Beira Baixa,ACeS Pinhal Interior Sul (ULS Castelo Branco),Continente,Centro,1660508
+16H0511,Vila Velha de Ródão,,-,Dado nulo ou não aplicável,Vila Velha de Ródão,Centro,Beira Baixa,ACeS Beira Interior Sul (ULS Castelo Branco),Continente,Centro,1690511
+16I1401,Abrantes,3.31,,,Abrantes,Lisboa e Vale do Tejo,Médio Tejo,ACeS Médio Tejo,Continente,Centro,16C1401
+16I1402,Alcanena,3.02,,,Alcanena,Lisboa e Vale do Tejo,Médio Tejo,ACeS Médio Tejo,Continente,Centro,16C1402
+16I1408,Constância,,-,Dado nulo ou não aplicável,Constância,Lisboa e Vale do Tejo,Médio Tejo,ACeS Médio Tejo,Continente,Centro,16C1408
+16I1410,Entroncamento,3.92,,,Entroncamento,Lisboa e Vale do Tejo,Médio Tejo,ACeS Médio Tejo,Continente,Centro,16C1410
+16I1411,Ferreira do Zêzere,3.46,,,Ferreira do Zêzere,Lisboa e Vale do Tejo,Médio Tejo,ACeS Médio Tejo,Continente,Centro,16C1411
+16I1413,Mação,,-,Dado nulo ou não aplicável,Mação,Lisboa e Vale do Tejo,Médio Tejo,ACeS Médio Tejo,Continente,Centro,1661413
+16I1421,Ourém,4.11,,,Ourém,Lisboa e Vale do Tejo,Médio Tejo,ACeS Médio Tejo,Continente,Centro,16C1421
+16I1417,Sardoal,,-,Dado nulo ou não aplicável,Sardoal,Lisboa e Vale do Tejo,Médio Tejo,ACeS Médio Tejo,Continente,Centro,16C1417
+16I0509,Sertã,3.11,,,Sertã,Centro,Médio Tejo,ACeS Pinhal Interior Sul (ULS Castelo Branco),Continente,Centro,1660509
+16I1418,Tomar,4.22,,,Tomar,Lisboa e Vale do Tejo,Médio Tejo,ACeS Médio Tejo,Continente,Centro,16C1418
+16I1419,Torres Novas,3.84,,,Torres Novas,Lisboa e Vale do Tejo,Médio Tejo,ACeS Médio Tejo,Continente,Centro,16C1419
+16I0510,Vila de Rei,,-,Dado nulo ou não aplicável,Vila de Rei,Centro,Médio Tejo,ACeS Pinhal Interior Sul (ULS Castelo Branco),Continente,Centro,1660510
+16I1420,Vila Nova da Barquinha,3.15,,,Vila Nova da Barquinha,Lisboa e Vale do Tejo,Médio Tejo,ACeS Médio Tejo,Continente,Centro,16C1420
+16J0902,Almeida,,-,Dado nulo ou não aplicável,Almeida,Centro,Beiras e Serra da Estrela,ULS Guarda,Continente,Centro,1680902
+16J0501,Belmonte,2.27,,,Belmonte,Centro,Beiras e Serra da Estrela,ACeS Cova Da Beira,Continente,Centro,16A0501
+16J0903,Celorico da Beira,,-,Dado nulo ou não aplicável,Celorico da Beira,Centro,Beiras e Serra da Estrela,ULS Guarda,Continente,Centro,1680903
+16J0503,Covilhã,3.57,,,Covilhã,Centro,Beiras e Serra da Estrela,ACeS Cova Da Beira,Continente,Centro,16A0503
+16J0904,Figueira de Castelo Rodrigo,,-,Dado nulo ou não aplicável,Figueira de Castelo Rodrigo,Centro,Beiras e Serra da Estrela,ULS Guarda,Continente,Centro,1680904
+16J0905,Fornos de Algodres,,-,Dado nulo ou não aplicável,Fornos de Algodres,Centro,Beiras e Serra da Estrela,ULS Guarda,Continente,Centro,1670905
+16J0504,Fundão,3.33,,,Fundão,Centro,Beiras e Serra da Estrela,ACeS Cova Da Beira,Continente,Centro,16A0504
+16J0906,Gouveia,2.73,,,Gouveia,Centro,Beiras e Serra da Estrela,ULS Guarda,Continente,Centro,1670906
+16J0907,Guarda,3.3,,,Guarda,Centro,Beiras e Serra da Estrela,ULS Guarda,Continente,Centro,1680907
+16J0908,Manteigas,,-,Dado nulo ou não aplicável,Manteigas,Centro,Beiras e Serra da Estrela,ULS Guarda,Continente,Centro,1680908
+16J0909,Mêda,,-,Dado nulo ou não aplicável,Mêda,Centro,Beiras e Serra da Estrela,ULS Guarda,Continente,Centro,1680909
+16J0910,Pinhel,,-,Dado nulo ou não aplicável,Pinhel,Centro,Beiras e Serra da Estrela,ULS Guarda,Continente,Centro,1680910
+16J0911,Sabugal,,-,Dado nulo ou não aplicável,Sabugal,Centro,Beiras e Serra da Estrela,ULS Guarda,Continente,Centro,1680911
+16J0912,Seia,2.64,,,Seia,Centro,Beiras e Serra da Estrela,ULS Guarda,Continente,Centro,1670912
+16J0913,Trancoso,,-,Dado nulo ou não aplicável,Trancoso,Centro,Beiras e Serra da Estrela,ULS Guarda,Continente,Centro,1680913
+1701502,Alcochete,6.74,,,Alcochete,Lisboa e Vale do Tejo,Área Metropolitana de Lisboa,ACeS Arco Ribeirinho,Continente,Área Metropolitana de Lisboa,1721502
+1701503,Almada,8.58,,,Almada,Lisboa e Vale do Tejo,Área Metropolitana de Lisboa,ACeS Almada/Seixal,Continente,Área Metropolitana de Lisboa,1721503
+1701115,Amadora,8.85,,,Amadora,Lisboa e Vale do Tejo,Área Metropolitana de Lisboa,ACeS Amadora,Continente,Área Metropolitana de Lisboa,1711115
+1701504,Barreiro,7.24,,,Barreiro,Lisboa e Vale do Tejo,Área Metropolitana de Lisboa,ACeS Arco Ribeirinho,Continente,Área Metropolitana de Lisboa,1721504
+1701105,Cascais,10.95,,,Cascais,Lisboa e Vale do Tejo,Área Metropolitana de Lisboa,ACeS Cascais,Continente,Área Metropolitana de Lisboa,1711105
+1701106,Lisboa,11.24,,,Lisboa,Lisboa e Vale do Tejo,Área Metropolitana de Lisboa,ACeS Lisboa Norte + Lisboa Central,Continente,Área Metropolitana de Lisboa,1711106
+1701107,Loures,7.9,,,Loures,Lisboa e Vale do Tejo,Área Metropolitana de Lisboa,ACeS Loures/Odivelas,Continente,Área Metropolitana de Lisboa,1711107
+1701109,Mafra,6.94,,,Mafra,Lisboa e Vale do Tejo,Área Metropolitana de Lisboa,ACeS Oeste Sul,Continente,Área Metropolitana de Lisboa,1711109
+1701506,Moita,6.21,,,Moita,Lisboa e Vale do Tejo,Área Metropolitana de Lisboa,ACeS Arco Ribeirinho,Continente,Área Metropolitana de Lisboa,1721506
+1701507,Montijo,6.48,,,Montijo,Lisboa e Vale do Tejo,Área Metropolitana de Lisboa,ACeS Arco Ribeirinho,Continente,Área Metropolitana de Lisboa,1721507
+1701116,Odivelas,8.43,,,Odivelas,Lisboa e Vale do Tejo,Área Metropolitana de Lisboa,ACeS Loures/Odivelas,Continente,Área Metropolitana de Lisboa,1711116
+1701110,Oeiras,10,,,Oeiras,Lisboa e Vale do Tejo,Área Metropolitana de Lisboa,Lisboa Ocidental/Oeiras,Continente,Área Metropolitana de Lisboa,1711110
+1701508,Palmela,6.03,,,Palmela,Lisboa e Vale do Tejo,Área Metropolitana de Lisboa,ACeS Arrábida,Continente,Área Metropolitana de Lisboa,1721508
+1701510,Seixal,7.01,,,Seixal,Lisboa e Vale do Tejo,Área Metropolitana de Lisboa,ACeS Almada/Seixal,Continente,Área Metropolitana de Lisboa,1721510
+1701511,Sesimbra,6.07,,,Sesimbra,Lisboa e Vale do Tejo,Área Metropolitana de Lisboa,ACeS Arrábida,Continente,Área Metropolitana de Lisboa,1721511
+1701512,Setúbal,6.85,,,Setúbal,Lisboa e Vale do Tejo,Área Metropolitana de Lisboa,ACeS Arrábida,Continente,Área Metropolitana de Lisboa,1721512
+1701111,Sintra,7.46,,,Sintra,Lisboa e Vale do Tejo,Área Metropolitana de Lisboa,ACeS Sintra,Continente,Área Metropolitana de Lisboa,1711111
+1701114,Vila Franca de Xira,7.09,,,Vila Franca de Xira,Lisboa e Vale do Tejo,Área Metropolitana de Lisboa,ACeS Estuário do Tejo,Continente,Área Metropolitana de Lisboa,1711114
+1811501,Alcácer do Sal,4.06,,,Alcácer do Sal,Alentejo,Alentejo Litoral,ULS Litoral Alentejano,Continente,Alentejo,1811501
+1811505,Grândola,4.99,,,Grândola,Alentejo,Alentejo Litoral,ULS Litoral Alentejano,Continente,Alentejo,1811505
+1810211,Odemira,4.1,,,Odemira,Alentejo,Alentejo Litoral,ULS Litoral Alentejano,Continente,Alentejo,1810211
+1811509,Santiago do Cacém,5.11,,,Santiago do Cacém,Alentejo,Alentejo Litoral,ULS Litoral Alentejano,Continente,Alentejo,1811509
+1811513,Sines,7.41,,,Sines,Alentejo,Alentejo Litoral,ULS Litoral Alentejano,Continente,Alentejo,1811513
+1840201,Aljustrel,,-,Dado nulo ou não aplicável,Aljustrel,Alentejo,Baixo Alentejo,ULS Baixo Alentejo,Continente,Alentejo,1840201
+1840202,Almodôvar,,-,Dado nulo ou não aplicável,Almodôvar,Alentejo,Baixo Alentejo,ULS Baixo Alentejo,Continente,Alentejo,1840202
+1840203,Alvito,,-,Dado nulo ou não aplicável,Alvito,Alentejo,Baixo Alentejo,ULS Baixo Alentejo,Continente,Alentejo,1840203
+1840204,Barrancos,,-,Dado nulo ou não aplicável,Barrancos,Alentejo,Baixo Alentejo,ULS Baixo Alentejo,Continente,Alentejo,1840204
+1840205,Beja,4.44,,,Beja,Alentejo,Baixo Alentejo,ULS Baixo Alentejo,Continente,Alentejo,1840205
+1840206,Castro Verde,,-,Dado nulo ou não aplicável,Castro Verde,Alentejo,Baixo Alentejo,ULS Baixo Alentejo,Continente,Alentejo,1840206
+1840207,Cuba,,-,Dado nulo ou não aplicável,Cuba,Alentejo,Baixo Alentejo,ULS Baixo Alentejo,Continente,Alentejo,1840207
+1840208,Ferreira do Alentejo,,-,Dado nulo ou não aplicável,Ferreira do Alentejo,Alentejo,Baixo Alentejo,ULS Baixo Alentejo,Continente,Alentejo,1840208
+1840209,Mértola,,-,Dado nulo ou não aplicável,Mértola,Alentejo,Baixo Alentejo,ULS Baixo Alentejo,Continente,Alentejo,1840209
+1840210,Moura,3.33,,,Moura,Alentejo,Baixo Alentejo,ULS Baixo Alentejo,Continente,Alentejo,1840210
+1840212,Ourique,,-,Dado nulo ou não aplicável,Ourique,Alentejo,Baixo Alentejo,ULS Baixo Alentejo,Continente,Alentejo,1840212
+1840213,Serpa,,-,Dado nulo ou não aplicável,Serpa,Alentejo,Baixo Alentejo,ULS Baixo Alentejo,Continente,Alentejo,1840213
+1840214,Vidigueira,,-,Dado nulo ou não aplicável,Vidigueira,Alentejo,Baixo Alentejo,ULS Baixo Alentejo,Continente,Alentejo,1840214
+1851403,Almeirim,4.02,,,Almeirim,Lisboa e Vale do Tejo,Lezíria do Tejo,ACeS Lezíria,Continente,Alentejo,1851403
+1851404,Alpiarça,,-,Dado nulo ou não aplicável,Alpiarça,Lisboa e Vale do Tejo,Lezíria do Tejo,ACeS Lezíria,Continente,Alentejo,1851404
+1851103,Azambuja,5.01,,,Azambuja,Lisboa e Vale do Tejo,Lezíria do Tejo,ACeS Estuário do Tejo,Continente,Alentejo,1851103
+1851405,Benavente,4.85,,,Benavente,Lisboa e Vale do Tejo,Lezíria do Tejo,ACeS Estuário do Tejo,Continente,Alentejo,1851405
+1851406,Cartaxo,3.9,,,Cartaxo,Lisboa e Vale do Tejo,Lezíria do Tejo,ACeS Lezíria,Continente,Alentejo,1851406
+1851407,Chamusca,,-,Dado nulo ou não aplicável,Chamusca,Lisboa e Vale do Tejo,Lezíria do Tejo,ACeS Lezíria,Continente,Alentejo,1851407
+1851409,Coruche,3.93,,,Coruche,Lisboa e Vale do Tejo,Lezíria do Tejo,ACeS Lezíria,Continente,Alentejo,1851409
+1851412,Golegã,,-,Dado nulo ou não aplicável,Golegã,Lisboa e Vale do Tejo,Lezíria do Tejo,ACeS Lezíria,Continente,Alentejo,1851412
+1851414,Rio Maior,3.68,,,Rio Maior,Lisboa e Vale do Tejo,Lezíria do Tejo,ACeS Lezíria,Continente,Alentejo,1851414
+1851415,Salvaterra de Magos,4.37,,,Salvaterra de Magos,Lisboa e Vale do Tejo,Lezíria do Tejo,ACeS Lezíria,Continente,Alentejo,1851415
+1851416,Santarém,4.06,,,Santarém,Lisboa e Vale do Tejo,Lezíria do Tejo,ACeS Lezíria,Continente,Alentejo,1851416
+1861201,Alter do Chão,,-,Dado nulo ou não aplicável,Alter do Chão,Alentejo,Alto Alentejo,ULS Norte Alentejano,Continente,Alentejo,1821201
+1861202,Arronches,,-,Dado nulo ou não aplicável,Arronches,Alentejo,Alto Alentejo,ULS Norte Alentejano,Continente,Alentejo,1821202
+1861203,Avis,,-,Dado nulo ou não aplicável,Avis,Alentejo,Alto Alentejo,ULS Norte Alentejano,Continente,Alentejo,1821203
+1861204,Campo Maior,2.79,,,Campo Maior,Alentejo,Alto Alentejo,ULS Norte Alentejano,Continente,Alentejo,1821204
+1861205,Castelo de Vide,,-,Dado nulo ou não aplicável,Castelo de Vide,Alentejo,Alto Alentejo,ULS Norte Alentejano,Continente,Alentejo,1821205
+1861206,Crato,,-,Dado nulo ou não aplicável,Crato,Alentejo,Alto Alentejo,ULS Norte Alentejano,Continente,Alentejo,1821206
+1861207,Elvas,3.33,,,Elvas,Alentejo,Alto Alentejo,ULS Norte Alentejano,Continente,Alentejo,1821207
+1861208,Fronteira,,-,Dado nulo ou não aplicável,Fronteira,Alentejo,Alto Alentejo,ULS Norte Alentejano,Continente,Alentejo,1821208
+1861209,Gavião,,-,Dado nulo ou não aplicável,Gavião,Alentejo,Alto Alentejo,ULS Norte Alentejano,Continente,Alentejo,1821209
+1861210,Marvão,,-,Dado nulo ou não aplicável,Marvão,Alentejo,Alto Alentejo,ULS Norte Alentejano,Continente,Alentejo,1821210
+1861211,Monforte,,-,Dado nulo ou não aplicável,Monforte,Alentejo,Alto Alentejo,ULS Norte Alentejano,Continente,Alentejo,1821211
+1861212,Nisa,,-,Dado nulo ou não aplicável,Nisa,Alentejo,Alto Alentejo,ULS Norte Alentejano,Continente,Alentejo,1821212
+1861213,Ponte de Sor,3.79,,,Ponte de Sor,Alentejo,Alto Alentejo,ULS Norte Alentejano,Continente,Alentejo,1821213
+1861214,Portalegre,3.06,,,Portalegre,Alentejo,Alto Alentejo,ULS Norte Alentejano,Continente,Alentejo,1821214
+1861215,Sousel,,-,Dado nulo ou não aplicável,Sousel,Alentejo,Alto Alentejo,ULS Norte Alentejano,Continente,Alentejo,1831215
+1870701,Alandroal,,-,Dado nulo ou não aplicável,Alandroal,Alentejo,Alentejo Central,ACeS Alentejo Central,Continente,Alentejo,1830701
+1870702,Arraiolos,3.26,,,Arraiolos,Alentejo,Alentejo Central,ACeS Alentejo Central,Continente,Alentejo,1830702
+1870703,Borba,,-,Dado nulo ou não aplicável,Borba,Alentejo,Alentejo Central,ACeS Alentejo Central,Continente,Alentejo,1830703
+1870704,Estremoz,3.34,,,Estremoz,Alentejo,Alentejo Central,ACeS Alentejo Central,Continente,Alentejo,1830704
+1870705,Évora,5.46,,,Évora,Alentejo,Alentejo Central,ACeS Alentejo Central,Continente,Alentejo,1830705
+1870706,Montemor-o-Novo,3.71,,,Montemor-o-Novo,Alentejo,Alentejo Central,ACeS Alentejo Central,Continente,Alentejo,1830706
+1870707,Mora,,-,Dado nulo ou não aplicável,Mora,Alentejo,Alentejo Central,ACeS Alentejo Central,Continente,Alentejo,1820707
+1870708,Mourão,,-,Dado nulo ou não aplicável,Mourão,Alentejo,Alentejo Central,ACeS Alentejo Central,Continente,Alentejo,1830708
+1870709,Portel,,-,Dado nulo ou não aplicável,Portel,Alentejo,Alentejo Central,ACeS Alentejo Central,Continente,Alentejo,1830709
+1870710,Redondo,,-,Dado nulo ou não aplicável,Redondo,Alentejo,Alentejo Central,ACeS Alentejo Central,Continente,Alentejo,1830710

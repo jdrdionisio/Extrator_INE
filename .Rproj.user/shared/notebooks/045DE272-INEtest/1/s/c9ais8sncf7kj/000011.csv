@@ -1,0 +1,9 @@
+"0","map(df_list~write.csv(.x, file.path(""outputs"", paste0(.y, "".csv""))))
+"
+"2","Warning: Use of calls and pairlists in map functions was deprecated in purrr 1.0.0.
+Please coerce explicitly with `as.list()`"
+"1","[1m[33mError[39m in `map()`:[22m
+[33m![39m `.x` must be a vector, not a <formula> object.
+Backtrace:
+[90m 1. [39m[1m[94mpurrr::map([39m[22mdf_list ~ write.csv(.x, file.path(""outputs"", paste0(.y, "".csv"")))[1m[94m)[39m[22m
+"
