@@ -1,0 +1,13 @@
+name: INE_API
+title: INE_API
+username:
+account: dlk8fm-joao-dionisio
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 8487356
+bundleId: 6927872
+url: https://dlk8fm-joao-dionisio.shinyapps.io/INE_API/
+when: 1678226602.32466
+lastSyncTime: 1678226602.32469
+asMultiple: FALSE
+asStatic: FALSE
