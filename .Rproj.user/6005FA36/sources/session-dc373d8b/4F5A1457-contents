@@ -43,6 +43,7 @@ Indicadores <- read_excel("datasets/Indicadores.xlsx",
   distinct(designacao, .keep_all = TRUE)
 
 counter <- 1
+
 result_list <- list()
 
 sleep <- function(z){
@@ -222,13 +223,24 @@ ui <- fluidPage(
       h2("Dados Recolhidos pelo Extractor"),
       uiOutput("error"),
       uiOutput("real_data_tabs"),
-      # h1("Dados Agregados"),
+      h1("Dados Agregados")
       # uiOutput("agg_data_tabs")
     )
   )
 )
 # Define server logic required to draw a histogram
 server <- function(input, output, session) {
+  output$sns_img <- renderImage({
+    list(src = "www/SNS.png",
+         height= 60)
+    
+  }, deleteFile = F)
+  output$dgs_img <- renderImage({
+    
+    list(src = "www/DGS.png",
+         height= 60)
+    
+  }, deleteFile = F)
   # Update the choices for the dataset input based on the text input
     updateSelectizeInput(session, 
                           'dataset', 
@@ -279,6 +291,7 @@ server <- function(input, output, session) {
       NULL
     }
   })
+  
   output$debug_panel <- renderUI({
     if (input$my_checkbox1==TRUE) {
       tabsetPanel(
@@ -407,7 +420,9 @@ server <- function(input, output, session) {
   })
 
   result_list_reactive <- reactiveVal()
+  
   desag <- reactiveVal()
+  
   observeEvent(input$go,{
     # Disable inputs
     shinyjs::disable(selector = "input")
@@ -423,6 +438,7 @@ server <- function(input, output, session) {
             geo_ref_df = geo_ref_df)
     
     result_list_reactive(result_list_updated)
+    print(result_list_updated)
     desag(c(input$area1,input$desagregacao))
     output$error <- NULL}
     else if(length(filtered_indicador())==0){
@@ -453,7 +469,7 @@ server <- function(input, output, session) {
     # Create a list of tabPanels with dataTables and downloadButtons
     tabs <- lapply(items, function(item) {
       full_name <- Indicadores$designacao[Indicadores$codigo_de_difusao == item]
-      title <- substr(Indicadores$designacao[Indicadores$codigo_de_difusao == item], 1, 20)
+      title <- substr(Indicadores$designacao[Indicadores$codigo_de_difusao == item], 1, 10)
       if (length(full_name) == 0) {
         full_name <- item
       } else {
@@ -492,125 +508,113 @@ server <- function(input, output, session) {
       )
     })
   })
-#aggreagated data
-  # output$agg_data_tabs <- renderUI({
-  #   # Get the items from result_list_reactive
-  #   items <- names(result_list_reactive())
-  #   # Create a list of tabPanels with dataTables and downloadButtons
-  #   tabs <- list()
-  #   # Create a list to hold the data frames grouped by the column mentioned in the if statements
-  #   group_list <- list(
-  #     ACES = list(),
-  #     ARS = list(),
-  #     Freguesia = list(),
-  #     Municipio = list(),
-  #     Continente = list(),
-  #     Nacional = list()
-  #   )
-  #   # Loop over each item in result_list_reactive
-  #   for (item in items) {
-  #     full_name <- Indicadores$designacao[Indicadores$codigo_de_difusao == item]
-  #     title <- substr(Indicadores$designacao[Indicadores$codigo_de_difusao == item], 1, 20)
-  #     if (length(full_name) == 0) {
-  #       full_name <- item
-  #     } else {
-  #       full_name <- full_name[1]
-  #     }
-  #     # Loop over each aggregation level
-  #     for (agg in desag()) {
-  #       # Group the data based on the column mentioned in the if statements
-  #       if ("ACES" %in% input$desagregacao | "ACES" %in% input$area1& "aces_2022" %in% colnames(result_list_reactive()[[item]])) {
-  #         group_list$ACES[[agg]] <- result_list_reactive()[[item]][result_list_reactive()[[item]][, "aces_2022"] %in% agg, ]
-  #       }
-  #       if ("ARS" %in% input$desagregacao | "ARS" %in% input$area1& "ars_2013_cod" %in% colnames(result_list_reactive()[[item]])) {
-  #         group_list$ARS[[agg]] <- result_list_reactive()[[item]][result_list_reactive()[[item]][, "ars_2013_cod"] %in% agg, ]
-  #       }
-  #       if ("Freguesia" %in% input$desagregacao | "Freguesia" %in% input$area1 & "dicofre_2013" %in% colnames(result_list_reactive()[[item]])) {
-  #         group_list$Freguesia[[agg]] <- result_list_reactive()[[item]][result_list_reactive()[[item]][, "dicofre_2013"] %in% agg, ]
-  #       }
-  #       if ("Municipio" %in% input$desagregacao | "Municipio" %in% input$area1 & "municipio_2013" %in% colnames(result_list_reactive()[[item]])) {
-  #         group_list$Municipio[[agg]] <- result_list_reactive()[[item]][result_list_reactive()[[item]][, "municipio_2013"] %in% agg, ]
-  #       }
-  #       if ("Continente" %in% input$desagregacao | "Continente" %in% input$area1& "nuts1_2013_cod" %in% colnames(result_list_reactive()[[item]])) {
-  #         group_list$Continente[[agg]] <- result_list_reactive()[[item]][result_list_reactive()[[item]][, "nuts1_2013_cod"] %in% agg, ]
-  #       }
-  #       if ("Nacional" %in% input$desagregacao | "Nacional" %in% input$area1) {
-  #         group_list$Nacional[[agg]] <- result_list_reactive()[[item]]
-  #       }
-  #     }
-  #     # Loop over each if statement that is TRUE and create
-  #     
-  #       # filter the data based on indicator and aggregation level
-  #       data <- result_list_reactive()[[item]][result_list_reactive()[[item]][, "Aggregation"] %in% agg, ]
-  #       # add the aggregation level to the download button name
-  #       download_name <- paste0(item, "_", agg, ".csv")
-  #       tabs <- append(tabs, list(tabPanel(
-  #         title, # set tooltip with full name
-  #         h4(strong(full_name)),
-  #         DT::dataTableOutput(paste0(item, "_", agg, "_table")),
-  #         downloadButton(paste0(item, "_", agg, "_download"), download_name)
-  #       )))
-  #       # Render dataTables and download handlers for the current indicator and aggregation level
-  #       output[[paste0(item, "_", agg, "_table")]] <- DT::renderDataTable({
-  #         # Return a dataTable with the data
-  #         DT::datatable(data)
-  #       })
-  #       output[[paste0(item, "_", agg, "_download")]] <- downloadHandler(
-  #         filename = function() {
-  #           download_name
-  #         },
-  #         content = function(file) {
-  #           # Write the data to a csv file
-  #           write.csv(data, file)
-  #         }
-  #       )
-  #     }
-  #   }
-  #   # Return a tabsetPanel with the tabs
-  #   do.call(tabsetPanel, tabs)
-  # })
-  # 
-  # # Render dataTables and download handlers when result_list_reactive changes
-  # observe({
-  #   lapply(names(result_list_reactive()), function(item) {
-  #     output[[paste0(item, "_table")]] <- DT::renderDataTable({
-  #       # Get the data from result_list_reactive
-  #       data <- result_list_reactive()[[item]]
-  #       # Return a dataTable with the data
-  #       DT::datatable(data)
-  #     })
-  #     output[[paste0(item, "_download")]] <- downloadHandler(
-  #       filename = function() {
-  #         paste0(item, "_", input$area1, ".csv")
-  #       },
-  #       content = function(file) {
-  #         # Get the data from result_list_reactive
-  #         data <- result_list_reactive()[[item]]
-  #         # Filter the data based on the selected deaggregations
-  #         data <- data %>% filter(desagregacao %in% input$area1)
-  #         # Write the data to a csv file
-  #         write.csv(data, file)
-  #       }
-  #     )
-  #   })
-  # })
-  output$sns_img <- renderImage({
-    
-    list(src = "www/SNS.png",
-         height= 60)
-    
-  }, deleteFile = F)
-  output$dgs_img <- renderImage({
-    
-    list(src = "www/DGS.png",
-         height= 60)
-    
-  }, deleteFile = F)
 }
-
 # Run the application 
 shinyApp(ui, server)
 
+
+#aggreagated data
+# output$agg_data_tabs <- renderUI({
+#   # Get the items from result_list_reactive
+#   items <- names(result_list_reactive())
+#   # Create a list of tabPanels with dataTables and downloadButtons
+#   tabs <- list()
+#   # Create a list to hold the data frames grouped by the column mentioned in the if statements
+#   group_list <- list(
+#     ACES = list(),
+#     ARS = list(),
+#     Freguesia = list(),
+#     Municipio = list(),
+#     Continente = list(),
+#     Nacional = list()
+#   )
+#   # Loop over each item in result_list_reactive
+#   for (item in items) {
+#     full_name <- Indicadores$designacao[Indicadores$codigo_de_difusao == item]
+#     title <- substr(Indicadores$designacao[Indicadores$codigo_de_difusao == item], 1, 20)
+#     if (length(full_name) == 0) {
+#       full_name <- item
+#     } else {
+#       full_name <- full_name[1]
+#     }
+#     # Loop over each aggregation level
+#     for (agg in desag()) {
+#       # Group the data based on the column mentioned in the if statements
+#       if ("ACES" %in% input$desagregacao | "ACES" %in% input$area1& "aces_2022" %in% colnames(result_list_reactive()[[item]])) {
+#         group_list$ACES[[agg]] <- result_list_reactive()[[item]][result_list_reactive()[[item]][, "aces_2022"] %in% agg, ]
+#       }
+#       if ("ARS" %in% input$desagregacao | "ARS" %in% input$area1& "ars_2013_cod" %in% colnames(result_list_reactive()[[item]])) {
+#         group_list$ARS[[agg]] <- result_list_reactive()[[item]][result_list_reactive()[[item]][, "ars_2013_cod"] %in% agg, ]
+#       }
+#       if ("Freguesia" %in% input$desagregacao | "Freguesia" %in% input$area1 & "dicofre_2013" %in% colnames(result_list_reactive()[[item]])) {
+#         group_list$Freguesia[[agg]] <- result_list_reactive()[[item]][result_list_reactive()[[item]][, "dicofre_2013"] %in% agg, ]
+#       }
+#       if ("Municipio" %in% input$desagregacao | "Municipio" %in% input$area1 & "municipio_2013" %in% colnames(result_list_reactive()[[item]])) {
+#         group_list$Municipio[[agg]] <- result_list_reactive()[[item]][result_list_reactive()[[item]][, "municipio_2013"] %in% agg, ]
+#       }
+#       if ("Continente" %in% input$desagregacao | "Continente" %in% input$area1& "nuts1_2013_cod" %in% colnames(result_list_reactive()[[item]])) {
+#         group_list$Continente[[agg]] <- result_list_reactive()[[item]][result_list_reactive()[[item]][, "nuts1_2013_cod"] %in% agg, ]
+#       }
+#       if ("Nacional" %in% input$desagregacao | "Nacional" %in% input$area1) {
+#         group_list$Nacional[[agg]] <- result_list_reactive()[[item]]
+#       }
+#     }
+#     # Loop over each if statement that is TRUE and create
+#     
+#       # filter the data based on indicator and aggregation level
+#       data <- result_list_reactive()[[item]][result_list_reactive()[[item]][, "Aggregation"] %in% agg, ]
+#       # add the aggregation level to the download button name
+#       download_name <- paste0(item, "_", agg, ".csv")
+#       tabs <- append(tabs, list(tabPanel(
+#         title, # set tooltip with full name
+#         h4(strong(full_name)),
+#         DT::dataTableOutput(paste0(item, "_", agg, "_table")),
+#         downloadButton(paste0(item, "_", agg, "_download"), download_name)
+#       )))
+#       # Render dataTables and download handlers for the current indicator and aggregation level
+#       output[[paste0(item, "_", agg, "_table")]] <- DT::renderDataTable({
+#         # Return a dataTable with the data
+#         DT::datatable(data)
+#       })
+#       output[[paste0(item, "_", agg, "_download")]] <- downloadHandler(
+#         filename = function() {
+#           download_name
+#         },
+#         content = function(file) {
+#           # Write the data to a csv file
+#           write.csv(data, file)
+#         }
+#       )
+#     }
+#   }
+#   # Return a tabsetPanel with the tabs
+#   do.call(tabsetPanel, tabs)
+# })
+# 
+# # Render dataTables and download handlers when result_list_reactive changes
+# observe({
+#   lapply(names(result_list_reactive()), function(item) {
+#     output[[paste0(item, "_table")]] <- DT::renderDataTable({
+#       # Get the data from result_list_reactive
+#       data <- result_list_reactive()[[item]]
+#       # Return a dataTable with the data
+#       DT::datatable(data)
+#     })
+#     output[[paste0(item, "_download")]] <- downloadHandler(
+#       filename = function() {
+#         paste0(item, "_", input$area1, ".csv")
+#       },
+#       content = function(file) {
+#         # Get the data from result_list_reactive
+#         data <- result_list_reactive()[[item]]
+#         # Filter the data based on the selected deaggregations
+#         data <- data %>% filter(desagregacao %in% input$area1)
+#         # Write the data to a csv file
+#         write.csv(data, file)
+#       }
+#     )
+#   })
+# })
 # Extração da metainformação:
 #   
 # {host_url}/ine/json_indicador/pindicaMeta.jsp?varcd={varcd_cod}&lang={lang}
