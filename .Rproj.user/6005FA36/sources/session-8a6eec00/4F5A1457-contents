@@ -51,7 +51,7 @@ result_list <- list()
 
 sleep <- function(z){
   if (z %% 100 == 0) {
-    Sys.sleep(5)
+    Sys.sleep(10)
     z <- 1
   }else{
     z <- z+1
@@ -134,11 +134,12 @@ ine.get <- function(indicadores,largest_area,obs_back,result_list,geo_ref_df) {
         df <- dados %>%
           unnest(!!sym(obs))%>%
           select(-any_of(colunas_nanos))%>%
-          mutate(obs=as.character(obs))
+          mutate(obs=as.character(obs))%>%
+          left_join(geo_ref_d, by=c("geocod" = as.character(geo_ref_by)),  multiple = "first" )
         # Add data frame to list
         df_all <- bind_rows(df_all, df)
         # Pause for 1 second
-        # Sys.sleep(1)
+        Sys.sleep(1)
       }
       if(w==1){
         result_list[[indicador_atual]] <- df_all
@@ -146,9 +147,7 @@ ine.get <- function(indicadores,largest_area,obs_back,result_list,geo_ref_df) {
       else{
         result_list[[indicador_atual]] <- bind_rows(result_list[[indicador_atual]], df_all)
       }
-    }  
-    result_list[[indicador_atual]] <- result_list[[indicador_atual]]%>%
-    left_join(geo_ref_d, by=c("geocod" = as.character(geo_ref_by)),  multiple = "first" )
+    }return(result_list)
   }
   return(result_list)
 }
@@ -514,6 +513,7 @@ server <- function(input, output, session) {
             obs_back = input$obs_back, 
             result_list= result_list,
             geo_ref_df = geo_ref_df)
+    print(result_list_updated)
     result_list_reactive(result_list_updated)
     desag(c(input$area1,input$desagregacao))
     output$error <- NULL}

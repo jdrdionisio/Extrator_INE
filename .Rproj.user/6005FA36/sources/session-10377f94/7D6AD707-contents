@@ -155,7 +155,7 @@ ine.get <- function(indicadores,largest_area,obs_back,result_list,geo_ref_df) {
 
 desag_opcoes <- NULL
 # Define UI for application that draws a histogram
-ui <- navbarPage("Extrator INE v0.1",
+ui <- navbarPage("Extrator INE v0.1.1",
       tabPanel("Dados totais",
        useShinyjs(),
        fluidRow(
@@ -215,6 +215,9 @@ ui <- navbarPage("Extrator INE v0.1",
                 "Debug Panel", 
                 FALSE),
       br(),
+      p("Log 0.1.1:"),
+      p("Otimização na função que vai buscar os dados"),
+      p("Erro na seleção de município"),
       p("Próximas melhorias:"),
       p("Automatizar a procura dos Indicadores disponíveis"),
       p("Incluir a possibilidade de incluir os metadados"),
