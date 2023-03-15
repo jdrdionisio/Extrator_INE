@@ -1,5 +1,0 @@
-"0","library(readxl)"
-"0","Indicadores <- read_excel(""INE_API/datasets/Indicadores.xlsx"", skip = 14)"
-"0",""
-"0","Indicadores <- Indicadores %>%"
-"0","  filter(`Disponível no Portal`== ""Sim"")"
