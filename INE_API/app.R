@@ -162,6 +162,7 @@ ine.get <-
       if (!is.null(groups_chosen) & !is.null(groups_other)) {
         groups_chosen <- c(groups_chosen, groups_other)
       }
+      success <- c()
       for (k in 1:length(groups_chosen)) {
         # Set starting test dataset
         l <- case_when(
@@ -192,6 +193,10 @@ ine.get <-
               errorCondition("Condições selecionadas sem resultados para este indicador.")
             }
           }
+        if (l %in% success) {
+          next
+          }
+        else {
         for (m in 1:length(codes_chosen)) {
           counter <- sleep(counter)
           results_raw <-
@@ -233,7 +238,9 @@ ine.get <-
             # Pause for 1 second
             # Sys.sleep(1)
           }
+          success <- c(success, l)
         }
+          }
         #
         if (k == 1 & m == 1) {
           result_list[[current_dataset]] <- df_all
@@ -288,7 +295,8 @@ ine.get <-
               select(geocod, geodsg, valor, obs)
           }
           result_list[[current_dataset]] <-
-            bind_rows(result_list[[current_dataset]], df_all)
+            bind_rows(result_list[[current_dataset]], df_all) |>
+            unique()
         }
       }
     }
@@ -419,6 +427,7 @@ ui <- navbarPage(
         h3("V0.2.1"),
         h4("2023-03-16"),
         p("- Remoção temporária de opções de outros níveis que causavam erro."),
+        p("- Redução no número de chamadas ao servidor, se houver redundâncias."),
         br(),
         h3("V0.2.0"),
         h4("2023-03-15"),
