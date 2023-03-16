@@ -52,6 +52,7 @@ indicators <- read_excel("datasets/Indicadores.xlsx",
   distinct(designacao, .keep_all = TRUE)
 # Prepare an empty list for the results
 result_list <- list()
+meta_list <- list()
 # Sleep function to prevent server lockout, rests for 5 seconds every 100 requests
 sleep <- function(z) {
   if (z %% 100 == 0) {
@@ -61,6 +62,52 @@ sleep <- function(z) {
     z <- z + 1
   }
   return(z)
+}
+
+ine.meta <- function(indicators, meta_list){
+  counter <- 0
+  for (i in 1:length(indicators)) {
+    # Get the current indicator
+    indicators_current <- indicators[i]
+    # Call the sleep function
+    counter <- sleep(counter)
+    # Call the INE API to gather the datasets for each code
+    results_raw <- fromJSON(
+      paste0(
+        "https://www.ine.pt/ine/json_indicador/pindicaMeta.jsp?varcd=",
+        indicators_current,
+        "&lang=PT"
+      ))
+    # Take the main features of the indicator - general for every indicator
+    names <- results_raw %>% select(!c(Dimensoes,Sucesso))%>% pivot_longer(everything(), names_to = "Nome" , values_to = "Descricao")
+    # Take the specific features of the indicator
+    notas <- results_raw%>%
+      unnest(Dimensoes)%>%
+      select(Descricao_Dim)%>%
+      unnest(Descricao_Dim)%>%
+      rename("Nome" = abrv , "Descricao" = versao)%>%
+      mutate(nome_dimensao= case_when(
+        dim_num == 1 ~ "obs" ,
+        dim_num == 2 ~ "geodsg" ,
+        dim_num == 3 ~ "dim_3" ,
+        dim_num == 4 ~ "dim_4" ,
+        dim_num == 5 ~ "dim_5" ,
+        dim_num == 6 ~ "dim_6" ,
+        dim_num == 7 ~ "dim_7" ,
+        dim_num == 8 ~ "dim_8" ,
+        .default = NA
+       ))%>%
+      select(!dim_num)
+    # check if column 'c' exists before mutating
+    if (exists('nota_dsg',  notas)) {
+      notas<-  notas %>% mutate(notadsg = nota_dsg)%>%select(!nota_dsg)
+    }
+    # Join both elements
+    final_result <- bind_rows(names,notas)
+    
+    meta_list[[indicators_current]]<- final_result
+  }
+  return(meta_list)
 }
 # Main funtion for INE indicators extraction
 ine.get <-
@@ -157,13 +204,12 @@ ine.get <-
             )
           ))
       }
-      # Creates a vector with all groups to retrieve
       if (!is.null(groups_chosen) & !is.null(groups_other)) {
         groups_chosen <- c(groups_chosen, groups_other)
       }
       success <- c(10)
       for (k in 1:length(groups_chosen)) {
-        # Set starting groups
+        # Set starting level
         l <- case_when(
           groups_chosen[k] == "Freguesia" ~ 1,
           groups_chosen[k] == "Município" ~ 2,
@@ -174,31 +220,31 @@ ine.get <-
           groups_chosen[k] == "País" ~ 8,
           groups_chosen[k] == "ACES" ~ 1,
           groups_chosen[k] == "ARS" ~ 2,
-          # If all others fail, the default is the parish groups
+          # If all others fail, the default is the parish level
           TRUE ~ 1
         )
-        # Sets the parameters from the starting groups
+        # Sets the chosen values from the starting level
         codes_chosen <- codes_reference[[l]]
         dimmension_chosen <- dimmension_reference[l]
         geo_chosen <- geo_reference[[l]]
         level_names_chosen <- level_names_reference[l]
-        # If it fails, then it increments until it finds a group with data and sets the parameters for that level
+        # If it fails, then it increments until it finds a level with data
         while ("Falso" %in% colnames(test[[l]]$Sucesso) & l < 11) {
           l <- l + 1
           codes_chosen <- codes_reference[[l]]
           dimmension_chosen <- dimmension_reference[l]
           geo_chosen <- geo_reference[[l]]
           level_names_chosen <- level_names_reference[l]
-          # Error condition when none of the selected groups have data
+          # Error condition when none of the selected levels have data
           if (l == 10) {
             errorCondition("Condições selecionadas sem resultados para este indicador.")
           }
         }
-        # If the level we want was already retrieved, jump to the next group
+        # If the level we want was already retrieved, jump to the next `groups_chosen`
         if (l %in% success) {
           next
         } else {
-          # Set an empty result data frame for all codes in each group
+          # Set an empty result data frame for all codes in each level
           df_all <- data.frame()
           # It increments along the codes
           for (m in 1:length(codes_chosen)) {
@@ -243,10 +289,10 @@ ine.get <-
               # Add results to data frame for all observations in each code
               df_observations <- bind_rows(df_observations, df)
             }
-            # Add results to data frame for all codes in each group
-            df_all <- bind_rows(df_all, df_observations)
+          # Add results to data frame for all codes in each level
+          df_all <- bind_rows(df_observations, df_all)
           }
-          # If only one group and code were requested, it outputs the results directly
+          # If only one level and code were requested, it outputs the results directly
           if (k == 1 & m == 1) {
             result_list[[indicators_current]] <- df_all
           } else {
@@ -408,6 +454,9 @@ ui <- navbarPage(
           FALSE
         ),
         uiOutput("other_groups_search"),
+        checkboxInput("meta_checkbox",
+                      "Pedir Metainformação",
+                      FALSE),
         actionButton("go", "Submeter", class = "btn-primary"),
         checkboxInput(
           "show_debug",
@@ -455,7 +504,18 @@ ui <- navbarPage(
         br()
       ),
       mainPanel(
+        h3("Próximas melhorias"),
+        p("- Corrigir o cálculo dos indicadores para distrito, ACES, ARS quando há múltiplas dimensões;"),
+        p("- Corrigir o cálculo dos indicadores para distrito, ACES, ARS quando não são contagens;"),
+        p("- Automatizar a procura dos indicadores disponíveis;"),
+        p("- Permitir a manipulação de variáveis;"),
+        p("- Comentar o código."),
         h2("Changelog"),
+        h3("V0.2.2"),
+        h4("2023-03-16"),
+        p("- Possibilitada a transferência de metadados."),
+        p("- Alteração do ficheiro de saída com UTF-8 para manter caracteres especiais."),
+        br(),
         h3("V0.2.1"),
         h4("2023-03-16"),
         p("- Remoção temporária de opções de outros níveis que causavam erro."),
@@ -470,16 +530,7 @@ ui <- navbarPage(
         h4("2023-03-14"),
         p("- Redução do tempo entre chamadas ao servidor;"),
         p("- Otimização do número de uniões dos resultados recebidos;"),
-        p("- Correção de erro na listagem dos municípios."),
-        br(),
-        h3("Próximas melhorias"),
-        p("- Corrigir o cálculo dos indicadores para distrito, ACES, ARS quando há múltiplas dimensões;"),
-        p("- Corrigir o cálculo dos indicadores para distrito, ACES, ARS quando não são contagens;"),
-        p("- Permitir níveis geográficos inferiores;"),
-        p("- Automatizar a procura dos indicadores disponíveis;"),
-        p("- Possibilitar a transferência de metadados;"),
-        p("- Permitir a manipulação de variáveis;"),
-        p("- Comentar o código.")
+        p("- Correção de erro na listagem dos municípios.")
       )
     )
   )
@@ -553,7 +604,7 @@ server <- function(input, output, session) {
     ),
     server = TRUE
   )
-  # Retrieves the list of available items for the chosen geographic group
+  # Retrieves the list of available items for the chosen geographic level
   chosen_group_options <- reactive({
     available_items <- NULL
     if (input$chosen_group_dropdown == "Freguesia") {
@@ -577,7 +628,7 @@ server <- function(input, output, session) {
     }
     return(available_items)
   })
-  # Creates the dynamic dropdown menu with the available items for the chosen geographic group
+  # Creates the dynamic dropdown menu with the available items for the chosen geographic level
   output$chosen_items_search <- renderUI({
     if (!is.null(chosen_group_options())) {
       selectizeInput(
@@ -797,6 +848,7 @@ server <- function(input, output, session) {
   })
   #
   result_list_reactive <- reactiveVal()
+  meta_list_reactive <- reactiveVal()
   #
   dimmension_chosen <- reactiveVal()
   #
@@ -806,6 +858,7 @@ server <- function(input, output, session) {
     shinyjs::disable(selector = "select")
     shinyjs::disable(selector = "button")
     result_list <- result_list
+    meta_list <- meta_list
     # Extract data from INE using the inputs from the UI
     if (length(filtered_indicators()) != 0 &
       nrow(filtered_area()$filtered_table) != 0) {
@@ -821,6 +874,15 @@ server <- function(input, output, session) {
       result_list_reactive(result_list_updated)
       dimmension_chosen(c(input$other_groups_list, input$chosen_group_dropdown))
       output$error <- NULL
+      if(input$meta_checkbox == TRUE){
+        meta_list_updated <- ine.meta(
+          indicators = filtered_indicators(),
+          meta_list = meta_list
+        )
+        meta_list_reactive(meta_list_updated)
+      }else{
+        next
+      }
     } else if (length(filtered_indicators()) == 0) {
       output$error <- renderUI({
         tagList(
@@ -864,7 +926,12 @@ server <- function(input, output, session) {
         # set tooltip with full name
         h4(strong(full_name)),
         DT::dataTableOutput(paste0(item, "_table")),
-        downloadButton(paste0(item, "_download"), paste0(item, ".csv"))
+        downloadButton(paste0(item, "_download"), paste0(item, ".csv")),
+        if(input$meta_checkbox == TRUE){
+          downloadButton(paste0(item,"meta", "_download"), paste0(item,"meta",".csv"))
+        }else{
+          next
+        }
       )
     })
     # Return a tabsetPanel with the tabs
@@ -887,11 +954,27 @@ server <- function(input, output, session) {
           # Get the data from result_list_reactive
           data <- result_list_reactive()[[item]]
           # Write the data to a csv file
-          write.csv(data, file)
+          fwrite(data, file,sep = ";", bom = TRUE)
         }
       )
+    if(input$meta_checkbox == TRUE){ 
+      output[[paste0(item,"meta","_download")]] <- downloadHandler(
+        filename = function() {
+          paste0(item,"meta",".csv")
+        },
+        content = function(file) {
+          # Get the data from result_list_reactive
+          data <- meta_list_reactive()[[item]]
+          # Write the data to a csv file
+          fwrite(data, file, sep = ";", bom = TRUE)
+        }
+      )}else{
+        next
+      }
     })
   })
 }
+
+
 # Run the application
 shinyApp(ui, server)
