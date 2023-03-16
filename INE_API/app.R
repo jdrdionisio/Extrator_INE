@@ -300,7 +300,7 @@ ine.get <-
 chosen_group_options <- NULL
 # Define UI for application that draws a histogram
 ui <- navbarPage(
-  "Extrator INE v0.1.2",
+  "Extrator INE v0.2.1",
   tabPanel(
     "Extração de dados",
     useShinyjs(),
@@ -418,7 +418,11 @@ ui <- navbarPage(
       ),
       mainPanel(
         h2("Changelog"),
-        h3("V0.1.2"),
+        h3("V0.2.1"),
+        h4("2023-03-16"),
+        p("- Remoção temporária de opções de outros níveis que causavam erro."),
+        br(),
+        h3("V0.2.0"),
         h4("2023-03-15"),
         p("- Reescrita das instruções;"),
         p("- Estruturação dos resultados com várias níveis geográficos em simultâneo."),
@@ -598,7 +602,7 @@ server <- function(input, output, session) {
       other_groups <-
         c(
           "Município",
-          "Distrito",
+          #"Distrito",
           "NUTS III",
           "NUTS II",
           "NUTS I",
@@ -608,7 +612,7 @@ server <- function(input, output, session) {
       other_groups <-
         c(
           "Freguesia",
-          "Distrito",
+          #"Distrito",
           "NUTS III",
           "NUTS II",
           "NUTS I",
@@ -618,18 +622,18 @@ server <- function(input, output, session) {
       other_groups <-
         c(
           "Freguesia",
-          "Município",
-          "NUTS III",
-          "NUTS II",
-          "NUTS I",
-          "País"
+          "Município"#,
+          #"NUTS III",
+          #"NUTS II",
+          #"NUTS I",
+          #"País"
         )
     } else if (input$chosen_group_dropdown == "NUTS III") {
       other_groups <-
         c(
           "Freguesia",
           "Município",
-          "Distrito",
+          #"Distrito",
           "NUTS II",
           "NUTS I",
           "País"
@@ -639,7 +643,7 @@ server <- function(input, output, session) {
         c(
           "Freguesia",
           "Município",
-          "Distrito",
+          #"Distrito",
           "NUTS III",
           "NUTS I",
           "País"
@@ -669,19 +673,19 @@ server <- function(input, output, session) {
         c(
           "Freguesia",
           "Município",
-          "Distrito",
+          #"Distrito",
           "NUTS III",
           "NUTS II",
           "NUTS I",
-          "País",
-          "ARS"
+          "País"#,
+          #"ARS"
         )
     } else if (input$chosen_group_dropdown == "ARS") {
       other_groups <-
         c(
           "Freguesia",
           "Município",
-          "Distrito",
+          #"Distrito",
           "NUTS III",
           "NUTS II",
           "NUTS I",
