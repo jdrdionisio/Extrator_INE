@@ -159,12 +159,13 @@ ine.get <-
             )
           ))
       }
+      # Creates a vector with all groups to retrieve
       if (!is.null(groups_chosen) & !is.null(groups_other)) {
         groups_chosen <- c(groups_chosen, groups_other)
       }
       success <- c(10)
       for (k in 1:length(groups_chosen)) {
-        # Set starting level
+        # Set starting groups
         l <- case_when(
           groups_chosen[k] == "Freguesia" ~ 1,
           groups_chosen[k] == "Município" ~ 2,
@@ -175,31 +176,31 @@ ine.get <-
           groups_chosen[k] == "País" ~ 8,
           groups_chosen[k] == "ACES" ~ 1,
           groups_chosen[k] == "ARS" ~ 2,
-          # If all others fail, the default is the parish level
+          # If all others fail, the default is the parish groups
           TRUE ~ 1
         )
-        # Sets the chosen values from the starting level
+        # Sets the parameters from the starting groups
         codes_chosen <- codes_reference[[l]]
         dimmension_chosen <- dimmension_reference[l]
         geo_chosen <- geo_reference[[l]]
         level_names_chosen <- level_names_reference[l]
-        # If it fails, then it increments until it finds a level with data
+        # If it fails, then it increments until it finds a group with data and sets the parameters for that level
         while ("Falso" %in% colnames(test[[l]]$Sucesso) & l < 11) {
           l <- l + 1
           codes_chosen <- codes_reference[[l]]
           dimmension_chosen <- dimmension_reference[l]
           geo_chosen <- geo_reference[[l]]
           level_names_chosen <- level_names_reference[l]
-          # Error condition when none of the selected levels have data
+          # Error condition when none of the selected groups have data
           if (l == 10) {
             errorCondition("Condições selecionadas sem resultados para este indicador.")
           }
         }
-        # If the level we want was already retrieved, jump to the next `groups_chosen`
+        # If the level we want was already retrieved, jump to the next group
         if (l %in% success) {
           next
         } else {
-          # Set an empty result data frame for all codes in each level
+          # Set an empty result data frame for all codes in each group
           df_all <- data.frame()
           # It increments along the codes
           for (m in 1:length(codes_chosen)) {
@@ -244,65 +245,67 @@ ine.get <-
               # Add results to data frame for all observations in each code
               df_observations <- bind_rows(df_observations, df)
             }
-          # Add results to data frame for all codes in each level
-          df_all <- bind_rows(df_observations, df)
+          # Add results to data frame for all codes in each group
+          df_all <- bind_rows(df_all, df_observations)
           }
-          # If only one level and code were requested, it outputs the results directly
+          # If only one group and code were requested, it outputs the results directly
           if (k == 1 & m == 1) {
             result_list[[indicators_current]] <- df_all
-          } else if (groups_chosen[k] == "Distrito" & min(success) < 4) {
-              # Adds the geographical information
-              df_all <- df_all |>
-                left_join(geo_chosen,
-                  by = c("geocod" = as.character(level_names_chosen)),
-                  multiple = "first"
-                ) |>
-                # Groups the results
-                summarise(
-                  geocod = distrito_2013_cod,
-                  geodsg = distrito_2013,
-                  valor = sum(valor),
-                  obs = obs,
-                  .by = c(obs, distrito_2013)
-                ) |>
-                select(geocod, geodsg, valor, obs)
-            } else if (groups_chosen[k] == "ACES" & min(success) < 2) {
-              # Adds the geographical information
-              df_all <- df_all |>
-                left_join(geo_chosen,
-                  by = c("geocod" = as.character(level_names_chosen)),
-                  multiple = "first"
-                ) |>
-                # Groups the results
-                summarise(
-                  geocod = aces_2022_cod,
-                  geodsg = aces_2022,
-                  valor = sum(valor),
-                  obs = obs,
-                  .by = c(obs, distrito_2013)
-                ) |>
-                select(geocod, geodsg, valor, obs)
-            } else if (groups_chosen[k] == "ARS" & min(success) < 4) {
-              # Adds the geographical information
-              df_all <- df_all |>
-                left_join(geo_chosen,
-                  by = c("geocod" = as.character(level_names_chosen)),
-                  multiple = "first"
-                ) |>
-                # Groups the results
-                summarise(
-                  geocod = ars_2022_cod,
-                  geodsg = ars_2022,
-                  valor = sum(valor),
-                  obs = obs,
-                  .by = c(obs, distrito_2013)
-                ) |>
-                select(geocod, geodsg, valor, obs)
+          # } else if (groups_chosen[k] == "Distrito" & min(success) < 4) {
+          #     # Adds the geographical information
+          #     df_all <- df_all |>
+          #       left_join(geo_chosen,
+          #         by = c("geocod" = as.character(level_names_chosen)),
+          #         multiple = "first"
+          #       ) |>
+          #       # Groups the results
+          #       summarise(
+          #         geocod = distrito_2013_cod,
+          #         geodsg = distrito_2013,
+          #         valor = sum(valor),
+          #         obs = obs,
+          #         .by = c(obs, distrito_2013)
+          #       ) |>
+          #       select(geocod, geodsg, valor, obs)
+          #   } else if (groups_chosen[k] == "ACES" & min(success) < 2) {
+          #     # Adds the geographical information
+          #     df_all <- df_all |>
+          #       left_join(geo_chosen,
+          #         by = c("geocod" = as.character(level_names_chosen)),
+          #         multiple = "first"
+          #       ) |>
+          #       # Groups the results
+          #       summarise(
+          #         geocod = aces_2022_cod,
+          #         geodsg = aces_2022,
+          #         valor = sum(valor),
+          #         obs = obs,
+          #         .by = c(obs, distrito_2013)
+          #       ) |>
+          #       select(geocod, geodsg, valor, obs)
+          #   } else if (groups_chosen[k] == "ARS" & min(success) < 4) {
+          #     # Adds the geographical information
+          #     df_all <- df_all |>
+          #       left_join(geo_chosen,
+          #         by = c("geocod" = as.character(level_names_chosen)),
+          #         multiple = "first"
+          #       ) |>
+          #       # Groups the results
+          #       summarise(
+          #         geocod = ars_2022_cod,
+          #         geodsg = ars_2022,
+          #         valor = sum(valor),
+          #         obs = obs,
+          #         .by = c(obs, distrito_2013)
+          #       ) |>
+          #       select(geocod, geodsg, valor, obs)
             } else {
-            result_list[[indicators_current]] <-
+              # If more than one group OR code were requested, it adds the results to the existing ones
+              result_list[[indicators_current]] <-
               bind_rows(result_list[[indicators_current]], df_all) |>
               unique() }
-            success <- sort(c(success, l))
+          # Adds the group we retrieved to the list
+          success <- sort(c(success, l))
           }
         }
       }
@@ -528,7 +531,7 @@ server <- function(input, output, session) {
     ),
     server = TRUE
   )
-  # Retrieves the list of available items for the chosen geographic level
+  # Retrieves the list of available items for the chosen geographic group
   chosen_group_options <- reactive({
     available_items <- NULL
     if (input$chosen_group_dropdown == "Freguesia") {
@@ -552,7 +555,7 @@ server <- function(input, output, session) {
     }
     return(available_items)
   })
-  # Creates the dynamic dropdown menu with the available items for the chosen geographic level
+  # Creates the dynamic dropdown menu with the available items for the chosen geographic group
   output$chosen_items_search <- renderUI({
     if (!is.null(chosen_group_options())) {
       selectizeInput(
