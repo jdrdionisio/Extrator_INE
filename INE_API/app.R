@@ -98,7 +98,7 @@ ine.meta <- function(indicators, meta_list){
         .default = NA
        ))%>%
       select(!dim_num)
-    # check if column 'c' exists before mutating
+    # check if column 'nota_dsg' exists before mutating
     if (exists('nota_dsg',  notas)) {
       notas<-  notas %>% mutate(notadsg = nota_dsg)%>%select(!nota_dsg)
     }
@@ -380,7 +380,7 @@ ine.get <-
 chosen_group_options <- NULL
 # Define UI for application that draws a histogram
 ui <- navbarPage(
-  "Extrator INE v0.2.1",
+  "Extrator INE v0.2.2",
   tabPanel(
     "Extração de dados",
     useShinyjs(),
@@ -510,6 +510,7 @@ ui <- navbarPage(
         p("- Automatizar a procura dos indicadores disponíveis;"),
         p("- Permitir a manipulação de variáveis;"),
         p("- Comentar o código."),
+        br(),
         h2("Changelog"),
         h3("V0.2.2"),
         h4("2023-03-16"),
@@ -953,7 +954,7 @@ server <- function(input, output, session) {
         content = function(file) {
           # Get the data from result_list_reactive
           data <- result_list_reactive()[[item]]
-          # Write the data to a csv file
+          # Write the data to a csv file , BOM (Byte Order Mark) at the beginning of the file; format 'UTF-8
           fwrite(data, file,sep = ";", bom = TRUE)
         }
       )
@@ -965,7 +966,7 @@ server <- function(input, output, session) {
         content = function(file) {
           # Get the data from result_list_reactive
           data <- meta_list_reactive()[[item]]
-          # Write the data to a csv file
+          # Write the data to a csv file BOM (Byte Order Mark) at the beginning of the file; format 'UTF-8
           fwrite(data, file, sep = ";", bom = TRUE)
         }
       )}else{
