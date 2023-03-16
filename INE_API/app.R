@@ -135,9 +135,7 @@ ine.get <-
       # Tests NUTS II
       "&Dim2=1&lang=PT",
       # Tests country
-      "&Dim2=PT&lang=PT",
-      # Sets no geographic specification, retrieves all available data
-      "&lang=PT"
+      "&Dim2=PT&lang=PT"
     )
     for (i in 1:length(indicators)) {
       # Get the current indicator
@@ -245,70 +243,91 @@ ine.get <-
               # Add results to data frame for all observations in each code
               df_observations <- bind_rows(df_observations, df)
             }
-          # Add results to data frame for all codes in each group
-          df_all <- bind_rows(df_all, df_observations)
+            # Add results to data frame for all codes in each group
+            df_all <- bind_rows(df_all, df_observations)
           }
           # If only one group and code were requested, it outputs the results directly
           if (k == 1 & m == 1) {
             result_list[[indicators_current]] <- df_all
-          # } else if (groups_chosen[k] == "Distrito" & min(success) < 4) {
-          #     # Adds the geographical information
-          #     df_all <- df_all |>
-          #       left_join(geo_chosen,
-          #         by = c("geocod" = as.character(level_names_chosen)),
-          #         multiple = "first"
-          #       ) |>
-          #       # Groups the results
-          #       summarise(
-          #         geocod = distrito_2013_cod,
-          #         geodsg = distrito_2013,
-          #         valor = sum(valor),
-          #         obs = obs,
-          #         .by = c(obs, distrito_2013)
-          #       ) |>
-          #       select(geocod, geodsg, valor, obs)
-          #   } else if (groups_chosen[k] == "ACES" & min(success) < 2) {
-          #     # Adds the geographical information
-          #     df_all <- df_all |>
-          #       left_join(geo_chosen,
-          #         by = c("geocod" = as.character(level_names_chosen)),
-          #         multiple = "first"
-          #       ) |>
-          #       # Groups the results
-          #       summarise(
-          #         geocod = aces_2022_cod,
-          #         geodsg = aces_2022,
-          #         valor = sum(valor),
-          #         obs = obs,
-          #         .by = c(obs, distrito_2013)
-          #       ) |>
-          #       select(geocod, geodsg, valor, obs)
-          #   } else if (groups_chosen[k] == "ARS" & min(success) < 4) {
-          #     # Adds the geographical information
-          #     df_all <- df_all |>
-          #       left_join(geo_chosen,
-          #         by = c("geocod" = as.character(level_names_chosen)),
-          #         multiple = "first"
-          #       ) |>
-          #       # Groups the results
-          #       summarise(
-          #         geocod = ars_2022_cod,
-          #         geodsg = ars_2022,
-          #         valor = sum(valor),
-          #         obs = obs,
-          #         .by = c(obs, distrito_2013)
-          #       ) |>
-          #       select(geocod, geodsg, valor, obs)
-            } else {
-              # If more than one group OR code were requested, it adds the results to the existing ones
-              result_list[[indicators_current]] <-
+          } else {
+            # If more than one group OR code were requested, it adds the results to the existing ones
+            result_list[[indicators_current]] <-
               bind_rows(result_list[[indicators_current]], df_all) |>
-              unique() }
+              unique()
+          }
           # Adds the group we retrieved to the list
           success <- sort(c(success, l))
-          }
         }
       }
+      # # Runs the synthetic groups if requested and possible
+      # if (any(c("Distrito", "ACES", "ARS") %in% groups_chosen) & min(success) < 4) {
+      #   if (1 %in% success) {
+      #     level_names_success <- level_names_reference[1]
+      #   } else if (2 %in% success) {
+      #     level_names_success <- level_names_reference[2]
+      #   } else if (3 %in% success) {
+      #     level_names_success <- level_names_reference[3]
+      #   }
+      #   if ("Distrito" %in% groups_chosen) {
+      #     result_list[[indicators_current]] <- bind_rows(
+      #       result_list[[indicators_current]],
+      #       result_list[[indicators_current]] |>
+      #         # Adds the geographical information
+      #         left_join(geo_chosen,
+      #           by = c("geocod" = as.character(level_names_success)),
+      #           multiple = "first"
+      #         ) |>
+      #         # Groups the results
+      #         summarise(
+      #           geocod = distrito_2013_cod,
+      #           geodsg = distrito_2013,
+      #           valor = sum(valor),
+      #           obs = obs,
+      #           .by = c(obs, distrito_2013)) |>
+      #         select(geocod, geodsg, valor, obs) |>
+      #         unique()
+      #     )
+      #   } else if ("ACES" %in% groups_chosen) {
+      #     result_list[[indicators_current]] <- bind_rows(
+      #       result_list[[indicators_current]],
+      #       result_list[[indicators_current]] |>
+      #         # Adds the geographical information
+      #         left_join(geo_chosen,
+      #           by = c("geocod" = as.character(level_names_success)),
+      #           multiple = "first"
+      #         ) |>
+      #         # Groups the results
+      #         summarise(
+      #           geocod = aces_2022_cod,
+      #           geodsg = aces_2022,
+      #           valor = sum(valor),
+      #           obs = obs,
+      #           .by = c(obs, aces_2022)) |>
+      #         select(geocod, geodsg, valor, obs) |>
+      #         unique()
+      #     )
+      #   } else if ("ARS" %in% groups_chosen) {
+      #     result_list[[indicators_current]] <- bind_rows(
+      #       result_list[[indicators_current]],
+      #       result_list[[indicators_current]] |>
+      #         # Adds the geographical information
+      #         left_join(geo_chosen,
+      #           by = c("geocod" = as.character(level_names_success)),
+      #           multiple = "first"
+      #         ) |>
+      #         # Groups the results
+      #         summarise(
+      #           geocod = ars_2022_cod,
+      #           geodsg = ars_2022,
+      #           valor = sum(valor),
+      #           obs = obs,
+      #           .by = c(obs, ars_2022)) |>
+      #         select(geocod, geodsg, valor, obs) |>
+      #         unique()
+      #     )
+      #   }
+      # }
+    }
     return(result_list)
   }
 #
@@ -383,9 +402,11 @@ ui <- navbarPage(
         br(),
         # Dropdown for additional desagregação options
         uiOutput("chosen_items_search"),
-        checkboxInput("other_groups_checkbox",
-                      "Agrupar resultados por outros níveis",
-                      FALSE),
+        checkboxInput(
+          "other_groups_checkbox",
+          "Agrupar resultados por outros níveis",
+          FALSE
+        ),
         uiOutput("other_groups_search"),
         actionButton("go", "Submeter", class = "btn-primary"),
         checkboxInput(
@@ -452,7 +473,8 @@ ui <- navbarPage(
         p("- Correção de erro na listagem dos municípios."),
         br(),
         h3("Próximas melhorias"),
-        p("- Corrigir o cálculo dos indicadores para distrito, ACES, ARS;"),
+        p("- Corrigir o cálculo dos indicadores para distrito, ACES, ARS quando há múltiplas dimensões;"),
+        p("- Corrigir o cálculo dos indicadores para distrito, ACES, ARS quando não são contagens;"),
         p("- Permitir níveis geográficos inferiores;"),
         p("- Automatizar a procura dos indicadores disponíveis;"),
         p("- Possibilitar a transferência de metadados;"),
