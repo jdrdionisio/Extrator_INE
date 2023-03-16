@@ -172,7 +172,7 @@ ine.get <-
           groups_chosen[k] == "NUTS II" ~ 6,
           groups_chosen[k] == "NUTS I" ~ 7,
           groups_chosen[k] == "País" ~ 8,
-          groups_chosen[k] == "ACES" ~ 2,
+          groups_chosen[k] == "ACES" ~ 1,
           groups_chosen[k] == "ARS" ~ 2,
           # If all others fail, the default is the parish level
           TRUE ~ 1
@@ -182,18 +182,16 @@ ine.get <-
         dimmension_chosen <- dimmension_reference[l]
         geo_chosen <- geo_reference[[l]]
         level_names_chosen <- level_names_reference[l]
-        if (l == 10) {
           while ("Falso" %in% colnames(test[[l]]$Sucesso) & l < 11) {
+            l <- l + 1
             codes_chosen <- codes_reference[[l]]
             dimmension_chosen <- dimmension_reference[l]
             geo_chosen <- geo_reference[[l]]
             level_names_chosen <- level_names_reference[l]
-            l <- l + 1
             if (l == 10) {
               errorCondition("Condições selecionadas sem resultados para este indicador.")
             }
           }
-        }
         for (m in 1:length(codes_chosen)) {
           counter <- sleep(counter)
           results_raw <-
@@ -224,7 +222,7 @@ ine.get <-
           for (observation_current in observation_used_names) {
             # Remove everything except the observations we want
             df <- results |>
-              unnest(as.character(observation_current)) |>
+              unnest(!!sym(observation_current)) |>
               select(-any_of(observation_available_names)) |>
               mutate(
                 obs = as.character(observation_current),
