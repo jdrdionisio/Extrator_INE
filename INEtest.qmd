@@ -70,6 +70,65 @@ Exemplo Simples de como funciona a app
 #| code-fold: true
 #| code-summary: "Mostrar Código"
 # https://www.ine.pt/ine/json_indicador/pindica.jsp?op=2&varcd=0011613&Dim1=T&lang=PT
+meta_list <- list()
+indicators <- c("0008614","0009817")
+sleep <- function(z) {
+  if (z %% 100 == 0) {
+    Sys.sleep(5)
+    z <- 1
+  } else {
+    z <- z + 1
+  }
+  return(z)
+}
+
+# results_raw <- fromJSON(
+#       paste0(
+#         "https://www.ine.pt/ine/json_indicador/pindicaMeta.jsp?varcd=",
+#         "0008614",
+#         "&lang=PT"
+#       ))
+names(model_arima)
+ine.meta(indicators, meta_list)
+
+ine.meta <- function(indicators, meta_list){
+  counter <- 0
+  for (i in 1:length(indicators)) {
+    # Get the current indicator
+    counter <- sleep(counter)
+    indicators_current <- indicators[i]
+    # Call the sleep function
+    counter <- sleep(counter)
+    # meta_list[[descricao]]
+    results_raw <- fromJSON(
+      paste0(
+        "https://www.ine.pt/ine/json_indicador/pindicaMeta.jsp?varcd=",
+        indicators_current,
+        "&lang=PT"
+      ))
+    names <- results_raw %>% select(!c(Dimensoes,Sucesso))%>% pivot_longer(everything(), names_to = "Nome" , values_to = "Descricao")
+    notas <- results_raw%>%
+      unnest(Dimensoes)%>%
+      select(Descricao_Dim)%>%
+      unnest(Descricao_Dim)%>%
+      select(!dim_num)%>%
+      rename("Nome" = abrv , "Descricao" = versao)
+    
+    final_result <- bind_rows(names,notas)
+    
+    meta_list[[indicators_current]]<- final_result
+  }
+  return(meta_list)
+}
+  
+a <- fromJSON(
+      paste0(
+        "https://www.ine.pt/ine/json_indicador/pindicaMeta.jsp?varcd=0005611",
+        "&lang=PT"
+      ))%>%
+  select(!c(Dimensoes,Sucesso))
+         
+colnames(a)
 
 numbers <- Indicadores$`Código de difusão`
 l <- length(numbers)

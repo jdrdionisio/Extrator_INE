@@ -5,10 +5,10 @@ account: dlk8fm-joao-dionisio
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 8487356
-bundleId: 6960293
+bundleId: 6966961
 url: https://dlk8fm-joao-dionisio.shinyapps.io/INE_API/
-when: 1678872759.98356
-lastSyncTime: 1678872759.98358
+when: 1678982994.65457
+lastSyncTime: 1678982994.6546
 asMultiple: FALSE
 asStatic: FALSE
 ignoredFiles: datasets/geolinkage_aces_20221.csv
