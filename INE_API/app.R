@@ -10,6 +10,8 @@
 # install.packages("shinyjs")
 # install.packages('rsconnect')
 # install.packages('stringdist')
+# install.packages("bslib")
+# install.packages("thematic")
 library(shiny)
 library(shinyWidgets)
 library(tidyverse)
@@ -19,6 +21,8 @@ library(readr)
 library(jsonlite)
 library(DT)
 library(shinyjs)
+library(bslib)
+library(thematic)
 # Load a reference table of geographical aggregations and Portuguese health clusters
 geo_lookup <-
   read_csv(
@@ -110,14 +114,7 @@ ine.meta <- function(indicators, meta_list){
   return(meta_list)
 }
 # Main funtion for INE indicators extraction
-ine.get <-
-  function(indicators,
-           selected_areas,
-           observation_requested,
-           result_list,
-           geo_reference,
-           groups_chosen,
-           groups_other) {
+ine.get <- function(indicators,selected_areas,observation_requested, result_list, geo_reference,groups_chosen, groups_other) {
     # Set the sleep timer to 0
     counter <- 0
     # Save the selected areas' codes into vectors
@@ -379,9 +376,16 @@ ine.get <-
 #
 chosen_group_options <- NULL
 # Define UI for application that draws a histogram
+thematic::thematic_shiny(font_google("Lato"))
+
 ui <- navbarPage(
+  theme = bs_theme(base_font = font_google("Lato"),
+  font_scale = -0.5, `enable-gradients` = TRUE, `enable-shadows` = TRUE,
+  ,spacer = "0.5rem", bootswatch = "minty"),
+  # theme = bs_theme(), 
+  # Change theme at will must activate bs_themer() in server
   "Extrator INE v0.2.2",
-  tabPanel(
+  nav(
     "Extração de dados",
     useShinyjs(),
     fluidRow(
@@ -411,12 +415,10 @@ ui <- navbarPage(
           "observation_slider",
           "Número de observações a pedir:",
           min = 1,
-          max = 30,
+          max = 20,
           value = 1
         ),
-        br(),
         p("Se o número de observações pedidas não estiver disponível, será extraído o máximo possível."),
-        br(),
         # Search bar for indicator
         selectizeInput(
           "indicators_search",
@@ -425,7 +427,6 @@ ui <- navbarPage(
           multiple = TRUE
         ),
         p("Lista de indicadores atualizada a 2023-03-06"),
-        br(),
         # Search bar for desagregação
         selectInput(
           "chosen_group_dropdown",
@@ -445,7 +446,6 @@ ui <- navbarPage(
         p(
           "Se o nível pedido não estiver disponível, será extraído o mais próximo possível."
         ),
-        br(),
         # Dropdown for additional desagregação options
         uiOutput("chosen_items_search"),
         checkboxInput(
@@ -458,22 +458,24 @@ ui <- navbarPage(
                       "Pedir Metainformação",
                       FALSE),
         actionButton("go", "Submeter", class = "btn-primary"),
+        br(),
+        br(),
         checkboxInput(
           "show_debug",
           "Painel debug",
           FALSE
         )
-      ),
+      ,width = 3),
       # Show a plot of the generated distribution
       mainPanel(
         uiOutput("debug_panel_checkbox"),
         h2("Dados Recolhidos pelo Extractor"),
         uiOutput("error"),
         uiOutput("results_table")
-      )
+      ,width = 9)
     )
   ),
-  tabPanel(
+  nav(
     "Sobre",
     fluidRow(
       column(
@@ -500,8 +502,7 @@ ui <- navbarPage(
         h3(strong("Autoria")),
         h4(
           strong("João Dionísio, Rafael Vasconcelos")
-        ),
-        br()
+        )
       ),
       mainPanel(
         h3("Próximas melhorias"),
@@ -512,13 +513,14 @@ ui <- navbarPage(
         p("- Comentar o código."),
         br(),
         h2("Changelog"),
+        h3("V0.3"),
+        h4("2023-03-17"),
+        p("- Retheming"),
+        br(),
         h3("V0.2.2"),
         h4("2023-03-16"),
         p("- Possibilitada a transferência de metadados."),
         p("- Alteração do ficheiro de saída com UTF-8 para manter caracteres especiais."),
-        br(),
-        h3("V0.2.1"),
-        h4("2023-03-16"),
         p("- Remoção temporária de opções de outros níveis que causavam erro."),
         p("- Redução no número de chamadas ao servidor, se houver redundâncias."),
         br(),
@@ -538,6 +540,7 @@ ui <- navbarPage(
 )
 #
 server <- function(input, output, session) {
+  # bs_themer()
   output$sns_img1 <- renderImage(
     {
       list(
@@ -875,15 +878,6 @@ server <- function(input, output, session) {
       result_list_reactive(result_list_updated)
       dimmension_chosen(c(input$other_groups_list, input$chosen_group_dropdown))
       output$error <- NULL
-      if(input$meta_checkbox == TRUE){
-        meta_list_updated <- ine.meta(
-          indicators = filtered_indicators(),
-          meta_list = meta_list
-        )
-        meta_list_reactive(meta_list_updated)
-      }else{
-        next
-      }
     } else if (length(filtered_indicators()) == 0) {
       output$error <- renderUI({
         tagList(
@@ -902,6 +896,13 @@ server <- function(input, output, session) {
           br()
         )
       })
+    }
+    if(input$meta_checkbox == TRUE){
+      meta_list_updated <- ine.meta(
+        indicators = filtered_indicators(),
+        meta_list = meta_list
+      )
+      meta_list_reactive(meta_list_updated)
     }
     # Enable inputs
     shinyjs::enable(selector = "input")
@@ -930,8 +931,6 @@ server <- function(input, output, session) {
         downloadButton(paste0(item, "_download"), paste0(item, ".csv")),
         if(input$meta_checkbox == TRUE){
           downloadButton(paste0(item,"meta", "_download"), paste0(item,"meta",".csv"))
-        }else{
-          next
         }
       )
     })
@@ -958,7 +957,7 @@ server <- function(input, output, session) {
           fwrite(data, file,sep = ";", bom = TRUE)
         }
       )
-    if(input$meta_checkbox == TRUE){ 
+      if(input$meta_checkbox == TRUE){ 
       output[[paste0(item,"meta","_download")]] <- downloadHandler(
         filename = function() {
           paste0(item,"meta",".csv")
@@ -969,9 +968,7 @@ server <- function(input, output, session) {
           # Write the data to a csv file BOM (Byte Order Mark) at the beginning of the file; format 'UTF-8
           fwrite(data, file, sep = ";", bom = TRUE)
         }
-      )}else{
-        next
-      }
+      )}
     })
   })
 }
