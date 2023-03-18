@@ -13,6 +13,7 @@
 # install.packages("bslib")
 # install.packages("thematic")
 # install.packages("shinycssloaders")
+# install.packages("ggthemes")
 library(shiny)
 library(shinyWidgets)
 library(tidyverse)
@@ -24,9 +25,8 @@ library(data.table)
 library(DT)
 library(shinyjs)
 library(bslib)
-library(thematic)
 library(shinycssloaders)
-
+library(ggthemes)
 # Load a reference table of geographical aggregations and Portuguese health clusters
 geo_lookup <-
   read_csv(
@@ -380,7 +380,7 @@ ine.get <- function(indicators,selected_areas,observation_requested, result_list
 #
 chosen_group_options <- NULL
 # Define UI for application that draws a histogram
-thematic::thematic_shiny(font_google("Lato"))
+# thematic::thematic_shiny(font_google("Lato"))
 
 ui <- navbarPage(
   theme = bs_theme(base_font = font_google("Lato"),
@@ -475,7 +475,6 @@ ui <- navbarPage(
         uiOutput("debug_panel_checkbox"),
         h2("Dados Recolhidos pelo Extractor"),
         uiOutput("error"),
-        # withSpinner(uiOutput("loading"),type = 5, color = "#78C2AD"),
         withSpinner(uiOutput("results_table"),type = 5, color = "#78C2AD")
       ,width = 9)
     )
@@ -514,7 +513,7 @@ ui <- navbarPage(
         p("- Corrigir o cálculo dos indicadores para distrito, ACES, ARS quando há múltiplas dimensões;"),
         p("- Corrigir o cálculo dos indicadores para distrito, ACES, ARS quando não são contagens;"),
         p("- Automatizar a procura dos indicadores disponíveis;"),
-        p("- Permitir a manipulação de variáveis;"),
+        p("- Permitir a manipulação de variáveis e visualizações;"),
         p("- Comentar o código."),
         br(),
         h2("Changelog"),
@@ -522,6 +521,7 @@ ui <- navbarPage(
         h4("2023-03-18"),
         p("- Melhorias visuais"),
         p("- Feedback ao utilizador de funcionamento da função principal"),
+        p("- Visualização dos dados recolhidos"),
         br(),
         h3("V0.2.2"),
         h4("2023-03-16"),
@@ -874,7 +874,7 @@ server <- function(input, output, session) {
   meta_list_reactive <- reactiveVal()
   #
   dimmension_chosen <- reactiveVal()
-  
+
   output$results_table <- NULL
   #
 observeEvent(input$go,{
@@ -915,6 +915,7 @@ observeEvent(input$go,{
             # set tooltip with full name
             h4(strong(full_name)),
             DTOutput(paste0(item, "_table")),
+            plotOutput(paste0(item,"_plot")),
             downloadButton(paste0(item, "_download"), paste0(item, ".csv")),
             if(input$meta_checkbox == TRUE){
               downloadButton(paste0(item,"meta", "_download"), paste0(item,"meta",".csv"))
@@ -954,14 +955,19 @@ observeEvent(input$go,{
     shinyjs::enable(selector = "input")
     shinyjs::enable(selector = "select")
     shinyjs::enable(selector = "button")
-    # Hide loading spinner
   })
-  # Render dataTables and download handlers when result_list_reactive changes
-  observe({
+# 
+  # Render dataTables and download handlers and simple plot when result_list_reactive changes
+observe({
     lapply(names(result_list_reactive()), function(item) {
       output[[paste0(item, "_table")]] <- renderDT({
         # Get the data from result_list_reactive
         data <- result_list_reactive()[[item]]
+        
+        data <- data %>%
+          mutate(valor = as.numeric(valor))%>%
+          mutate(year = str_sub(obs,-4))%>%
+          arrange(obs, year)
         # Return a dataTable with the data
         DT::datatable(data)
       })
@@ -988,10 +994,92 @@ observeEvent(input$go,{
           fwrite(data, file, sep = ";", bom = TRUE)
         }
       )}
+      output[[paste0(item, "_plot")]] <- renderPlot({
+        # This line retrieves the full name of the item from the 'indicators' dataframe based on its code
+        full_name <- indicators$designacao[indicators$codigo_de_difusao == item]
+        # This line retrieves the data for the current item from the reactive function and converts it to a dataframe
+        data1 <- as.data.frame(result_list_reactive()[[item]]) %>%
+          # This line converts the 'valor' column to numeric and creates a 'year' column based on the last 4 characters of 'obs'
+          mutate(valor = as.numeric(valor),
+                 year = str_sub(obs, -4)) %>%
+          # This line sorts the data by 'obs' and 'year'
+          arrange(obs, year)
+        # This line creates a ggplot object with the data1 dataframe as input
+        p <- ggplot2::ggplot() +
+          # This line adds a line layer with 'obs' on the x-axis, 'valor' on the y-axis, 'geodsg' as color, and 'geodsg' as the grouping variable
+          geom_line(data = data1,
+                    aes(x = factor(obs, levels = unique(obs), ordered = TRUE),
+                        y = valor,
+                        colour = as.factor(geodsg),
+                        group = geodsg),
+                    linewidth = 1.2) +
+          # This line rotates the x-axis labels by 90 degrees
+          scale_x_discrete(guide = guide_axis(angle = 90)) +
+          # This line adds a legend for the color variable, using the name 'Localização Geográfica'
+          scale_color_discrete(name = "Localização Geográfica") +
+        # This line sets the chart limits to remove extra white space
+          coord_cartesian(expand = FALSE) +
+          # This line adds a chart title, subtitle, and caption
+          labs(x = "Observações",
+               y = "Valor",
+               title = full_name,
+               subtitle = paste0("Últimas ", length(unique(data1$obs)), " Observações"),
+               caption = "Fonte dos Dados: INE") +
+          # This line sets the chart style to minimal and customizes the font sizes
+          theme_minimal() +
+          theme(plot.title = element_text(size = 14, face = "bold"),
+                plot.subtitle = element_text(size = 12, face = "bold"),
+                axis.title.y = element_text(size = 12),
+                axis.title.x = element_text(size = 12),
+                axis.text.y = element_text(size = 12),
+                axis.text.x = element_text(size = 12),
+                legend.title = element_text(size = 12))
+        
+        # This line prints the ggplot object
+        print(p)
+      })
     })
   })
 }
 
 
+            
 # Run the application
 shinyApp(ui, server)
+
+# output[[paste0(item,"_plot")]] <- renderPlot({
+#   full_name <- indicators$designacao[indicators$codigo_de_difusao == item]
+#   data1 <- as.data.frame(result_list_reactive()[[item]]) %>%
+#     mutate(valor = as.numeric(valor),
+#            year = str_sub(obs, -4)) %>%
+#     arrange(obs, year)
+#   
+#   p <- ggplot2::ggplot() +
+#     geom_line(data=data1,
+#               aes(x = factor(obs, levels=unique(obs),ordered= TRUE),
+#                   y = valor
+#                   ,colour = as.factor(geodsg),
+#                   group= geodsg)
+#               ,linewidth = 1.2)+
+#     scale_x_discrete(guide = guide_axis(angle = 90))+
+#     scale_color_discrete(name = "Localização Geográfica") +
+#     coord_cartesian(expand = FALSE)+
+#     labs(
+#       x = "Observações",
+#       y = "Valor",
+#       title = full_name,
+#       subtitle = paste0("Últimas ",length(unique(data1$obs))," Observações"),
+#       caption = "Fonte dos Dados:INE")+
+#     theme_minimal()+
+#     theme(plot.title = element_text(size = 14, face = "bold"),
+#           plot.subtitle = element_text(size = 12, face = "bold"),
+#           axis.title.y = element_text(size = 12),
+#           axis.title.x = element_text(size = 12),
+#           axis.text.y = element_text(size = 12),
+#           axis.text.x = element_text(size = 12),
+#           legend.title = element_text(size = 12),
+#     )
+#   
+#   print(p)
+#   
+# })

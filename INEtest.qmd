@@ -62,6 +62,30 @@ Indicadores <- read_excel("INE_API/datasets/Indicadores.xlsx", skip = 14)
 
 Indicadores <- Indicadores %>%
   filter(`Disponível no Portal`== "Sim")
+, ordered= TRUE
+
+graph_test <- X0009817 %>%
+  filter(aces2=="ACeS Baixo Mondego")%>%
+  mutate(valor = as.numeric(valor))%>%
+  mutate(year2 = str_sub(year,-4))%>%
+  arrange(year2, year)
+
+ggplot() +
+  geom_line(data = graph_test, aes(x = factor(year, levels=unique(year),ordered= TRUE)
+                                   ,y = as.numeric(valor), colour = geodsg, group= geodsg), linewidth = 1.2) +
+  scale_x_discrete(guide = guide_axis(angle = 90))+
+  scale_color_hue(direction = 1) +
+  coord_cartesian(expand = FALSE)+
+  labs(
+    x = "Observações",
+    y = "Valor",
+    title = "Teste",
+    caption = "Fonte dos Dados:INE",
+    color = "Localização Geográfica"
+  ) +
+  theme_minimal()
+
+length(unique(graph_test$year))
 ```
 
 Exemplo Simples de como funciona a app
