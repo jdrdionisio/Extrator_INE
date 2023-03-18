@@ -12,6 +12,7 @@
 # install.packages('stringdist')
 # install.packages("bslib")
 # install.packages("thematic")
+# install.packages("shinycssloaders")
 library(shiny)
 library(shinyWidgets)
 library(tidyverse)
@@ -19,10 +20,13 @@ library(janitor)
 library(readxl)
 library(readr)
 library(jsonlite)
+library(data.table)
 library(DT)
 library(shinyjs)
 library(bslib)
 library(thematic)
+library(shinycssloaders)
+
 # Load a reference table of geographical aggregations and Portuguese health clusters
 geo_lookup <-
   read_csv(
@@ -380,11 +384,11 @@ thematic::thematic_shiny(font_google("Lato"))
 
 ui <- navbarPage(
   theme = bs_theme(base_font = font_google("Lato"),
-  font_scale = -0.5, `enable-gradients` = TRUE, `enable-shadows` = TRUE,
+  font_scale = -0.5, `enable-gradients` = TRUE, `enable-shadows` = TRUE
   ,spacer = "0.5rem", bootswatch = "minty"),
   # theme = bs_theme(), 
   # Change theme at will must activate bs_themer() in server
-  "Extrator INE v0.2.2",
+  "Extrator INE v0.3",
   nav(
     "Extração de dados",
     useShinyjs(),
@@ -471,7 +475,8 @@ ui <- navbarPage(
         uiOutput("debug_panel_checkbox"),
         h2("Dados Recolhidos pelo Extractor"),
         uiOutput("error"),
-        uiOutput("results_table")
+        # withSpinner(uiOutput("loading"),type = 5, color = "#78C2AD"),
+        withSpinner(uiOutput("results_table"),type = 5, color = "#78C2AD")
       ,width = 9)
     )
   ),
@@ -514,8 +519,9 @@ ui <- navbarPage(
         br(),
         h2("Changelog"),
         h3("V0.3"),
-        h4("2023-03-17"),
-        p("- Retheming"),
+        h4("2023-03-18"),
+        p("- Melhorias visuais"),
+        p("- Feedback ao utilizador de funcionamento da função principal"),
         br(),
         h3("V0.2.2"),
         h4("2023-03-16"),
@@ -608,46 +614,59 @@ server <- function(input, output, session) {
     ),
     server = TRUE
   )
+  
+  chosen_group_options <- reactiveValues(available_items = NULL)
   # Retrieves the list of available items for the chosen geographic level
-  chosen_group_options <- reactive({
-    available_items <- NULL
+  # Update chosen_group_options() whenever input$chosen_group_dropdown changes
+  observeEvent(input$chosen_group_dropdown, {
     if (input$chosen_group_dropdown == "Freguesia") {
-      available_items <- geo_lookup$freguesia_2013
+      chosen_group_options$available_items <- geo_lookup$freguesia_2013
     } else if (input$chosen_group_dropdown == "Município") {
-      available_items <- geo_lookup$municipio_2013
+      chosen_group_options$available_items <- geo_lookup$municipio_2013
     } else if (input$chosen_group_dropdown == "Distrito") {
-      available_items <- geo_lookup$distrito_2013
+      chosen_group_options$available_items <- geo_lookup$distrito_2013
     } else if (input$chosen_group_dropdown == "NUTS III") {
-      available_items <- geo_lookup$nuts3_2013
+      chosen_group_options$available_items <- geo_lookup$nuts3_2013
     } else if (input$chosen_group_dropdown == "NUTS II") {
-      available_items <- geo_lookup$nuts2_2013
+      chosen_group_options$available_items <- geo_lookup$nuts2_2013
     } else if (input$chosen_group_dropdown == "NUTS I") {
-      available_items <- geo_lookup$nuts1_2013
+      chosen_group_options$available_items <- geo_lookup$nuts1_2013
     } else if (input$chosen_group_dropdown == "País") {
-      available_items <- geo_lookup$pais
+      chosen_group_options$available_items <- geo_lookup$pais
     } else if (input$chosen_group_dropdown == "ACES") {
-      available_items <- geo_lookup$aces_2022
+      chosen_group_options$available_items <- geo_lookup$aces_2022
     } else if (input$chosen_group_dropdown == "ARS") {
-      available_items <- geo_lookup$ars_2022
+      chosen_group_options$available_items <- geo_lookup$ars_2022
     }
-    return(available_items)
   })
-  # Creates the dynamic dropdown menu with the available items for the chosen geographic level
+  
+
+  # Render the dynamic dropdown menu with the available items for the chosen geographic level
   output$chosen_items_search <- renderUI({
-    if (!is.null(chosen_group_options())) {
+    if (!is.null(chosen_group_options$available_items)) {
       selectizeInput(
         "chosen_items",
         "Selecionar itens a incluir:",
-        # choices = NULL,
-        choices = chosen_group_options(),
+        choices = NULL,
         multiple = TRUE,
-        options = list(
-          placeholder = "Barra de pesquisa",
-          create = FALSE
-        )
       )
     }
   })
+  
+  # Update the dropdown menu whenever available_items changes
+  observe({
+    updateSelectizeInput(
+      session,
+      "chosen_items",
+      choices = chosen_group_options$available_items,
+      options = list(
+        placeholder = "Barra de pesquisa",
+        create = FALSE
+      ),
+      server = TRUE
+    )
+  })
+  
   # Creates a debug panel with the codes in the current selection
   output$debug_panel_checkbox <- renderUI({
     if (input$show_debug == TRUE) {
@@ -675,7 +694,7 @@ server <- function(input, output, session) {
             "Outros Níveis a Agrupar",
             verbatimTextOutput("groups_other")
           ),
-          tabPanel("Tabela de Freguesias", DT::dataTableOutput("df"))
+          tabPanel("Tabela de Freguesias", DTOutput("df"))
         )
       )
     } else {
@@ -784,7 +803,7 @@ server <- function(input, output, session) {
   })
   #
   output$other_groups_search <- renderUI({
-    if (!is.null(chosen_group_options()) & input$other_groups_checkbox == TRUE) {
+    if (!is.null(chosen_group_options$available_items) & input$other_groups_checkbox == TRUE) {
       selectizeInput(
         "other_groups_list",
         "Selecionar níveis a incluir:",
@@ -800,7 +819,7 @@ server <- function(input, output, session) {
   # Create a reactive function for the focused area codes
   filtered_area <- reactive({
     filtered <-
-      geo_lookup |> filter(chosen_group_options() %in% input$chosen_items)
+      geo_lookup |> filter(chosen_group_options$available_items %in% input$chosen_items)
     # Sets lists of codes for debug panel
     f_freguesia <- filtered |>
       pull(dicofre_2013) |>
@@ -828,7 +847,7 @@ server <- function(input, output, session) {
     return(f_indicators)
   })
   # Output the filtered dataset to the "df" table
-  output$df <- DT::renderDataTable({
+  output$df <- renderDT({
     filtered_area()$filtered_table
   })
   # Output the filtered codigo_de_difusao to "filtered_dataset"
@@ -855,8 +874,10 @@ server <- function(input, output, session) {
   meta_list_reactive <- reactiveVal()
   #
   dimmension_chosen <- reactiveVal()
+  
+  output$results_table <- NULL
   #
-  observeEvent(input$go, {
+observeEvent(input$go,{
     # Disable inputs
     shinyjs::disable(selector = "input")
     shinyjs::disable(selector = "select")
@@ -866,18 +887,43 @@ server <- function(input, output, session) {
     # Extract data from INE using the inputs from the UI
     if (length(filtered_indicators()) != 0 &
       nrow(filtered_area()$filtered_table) != 0) {
-      result_list_updated <- ine.get(
-        indicators = filtered_indicators(),
-        selected_areas = filtered_area()$filtered_table,
-        observation_requested = input$observation_slider,
-        result_list = result_list,
-        geo_reference = geo_reference,
-        groups_chosen = input$chosen_group_dropdown,
-        groups_other = input$other_groups_list
-      )
-      result_list_reactive(result_list_updated)
-      dimmension_chosen(c(input$other_groups_list, input$chosen_group_dropdown))
-      output$error <- NULL
+      # Render the tabs based on the reactive value
+      output$results_table <- renderUI({
+        result_list_updated <- ine.get(indicators = filtered_indicators(),selected_areas = filtered_area()$filtered_table, observation_requested = input$observation_slider,result_list = result_list,
+                                       geo_reference = geo_reference,
+                                       groups_chosen = input$chosen_group_dropdown,
+                                       groups_other = input$other_groups_list
+        )
+        result_list_reactive(result_list_updated)
+        dimmension_chosen(c(input$other_groups_list, input$chosen_group_dropdown))
+        
+        output$error <- NULL
+        # Get the items from result_list_reactive
+        items <- names(result_list_reactive())
+        # Create a list of tabPanels with dataTables and downloadButtons
+        tabs <- lapply(items, function(item) {
+          full_name <- indicators$designacao[indicators$codigo_de_difusao == item]
+          title <-
+            substr(indicators$designacao[indicators$codigo_de_difusao == item], 1, 20)
+          if (length(full_name) == 0) {
+            full_name <- item
+          } else {
+            full_name <- full_name[1]
+          }
+          tabPanel(
+            title,
+            # set tooltip with full name
+            h4(strong(full_name)),
+            DTOutput(paste0(item, "_table")),
+            downloadButton(paste0(item, "_download"), paste0(item, ".csv")),
+            if(input$meta_checkbox == TRUE){
+              downloadButton(paste0(item,"meta", "_download"), paste0(item,"meta",".csv"))
+            }
+          )
+        })
+        # Return a tabsetPanel with the tabs
+        do.call(tabsetPanel, tabs)
+      })
     } else if (length(filtered_indicators()) == 0) {
       output$error <- renderUI({
         tagList(
@@ -908,39 +954,12 @@ server <- function(input, output, session) {
     shinyjs::enable(selector = "input")
     shinyjs::enable(selector = "select")
     shinyjs::enable(selector = "button")
-  })
-  # Render the tabs based on the reactive value
-  output$results_table <- renderUI({
-    # Get the items from result_list_reactive
-    items <- names(result_list_reactive())
-    # Create a list of tabPanels with dataTables and downloadButtons
-    tabs <- lapply(items, function(item) {
-      full_name <- indicators$designacao[indicators$codigo_de_difusao == item]
-      title <-
-        substr(indicators$designacao[indicators$codigo_de_difusao == item], 1, 20)
-      if (length(full_name) == 0) {
-        full_name <- item
-      } else {
-        full_name <- full_name[1]
-      }
-      tabPanel(
-        title,
-        # set tooltip with full name
-        h4(strong(full_name)),
-        DT::dataTableOutput(paste0(item, "_table")),
-        downloadButton(paste0(item, "_download"), paste0(item, ".csv")),
-        if(input$meta_checkbox == TRUE){
-          downloadButton(paste0(item,"meta", "_download"), paste0(item,"meta",".csv"))
-        }
-      )
-    })
-    # Return a tabsetPanel with the tabs
-    do.call(tabsetPanel, tabs)
+    # Hide loading spinner
   })
   # Render dataTables and download handlers when result_list_reactive changes
   observe({
     lapply(names(result_list_reactive()), function(item) {
-      output[[paste0(item, "_table")]] <- DT::renderDataTable({
+      output[[paste0(item, "_table")]] <- renderDT({
         # Get the data from result_list_reactive
         data <- result_list_reactive()[[item]]
         # Return a dataTable with the data
