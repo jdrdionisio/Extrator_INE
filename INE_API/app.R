@@ -27,6 +27,7 @@ library(shinyjs)
 library(bslib)
 library(shinycssloaders)
 library(ggthemes)
+library(plotly)
 # Load a reference table of geographical aggregations and Portuguese health clusters
 geo_lookup <-
   read_csv(
@@ -515,6 +516,7 @@ ui <- navbarPage(
         p("- Corrigir o cálculo dos indicadores para distrito, ACES, ARS quando não são contagens;"),
         p("- Automatizar a procura dos indicadores disponíveis;"),
         p("- Permitir a manipulação de variáveis e visualizações;"),
+        p("- Melhoria da adaptação das visualizações;"),
         p("- Comentar o código."),
         br(),
         h2("Changelog"),
@@ -611,7 +613,7 @@ server <- function(input, output, session) {
     options = list(
       placeholder = "Barra de Pesquisa",
       create = FALSE,
-      maxOptions = 15
+      maxOptions = 30
     ),
     server = TRUE
   )
@@ -922,6 +924,8 @@ observeEvent(input$go,{
             h4(strong(full_name)),
             DTOutput(paste0(item, "_table")),
             plotOutput(paste0(item,"_plot")),
+            plotlyOutput(paste0(item,"_plotly")),
+            plotOutput(paste0(item,"_plot1"),height = "1200px", width ="auto"),
             downloadButton(paste0(item, "_download"), paste0(item, ".csv")),
             if(input$meta_checkbox == TRUE){
               downloadButton(paste0(item,"meta", "_download"), paste0(item,"meta",".csv"))
@@ -1024,6 +1028,110 @@ observe({
           # This line adds a legend for the color variable, using the name 'Localização Geográfica'
           scale_color_discrete(name = "Localização Geográfica") +
         # This line sets the chart limits to remove extra white space
+          coord_cartesian(expand = FALSE) +
+          # This line adds a chart title, subtitle, and caption
+          labs(x = "Observações",
+               y = "Valor",
+               title = full_name,
+               subtitle = paste0("Últimas ", length(unique(data1$obs)), " Observações"),
+               caption = "Fonte dos Dados: INE") +
+          # This line sets the chart style to minimal and customizes the font sizes
+          theme_minimal() +
+          theme(plot.title = element_text(size = 14, face = "bold"),
+                plot.subtitle = element_text(size = 12, face = "bold"),
+                axis.title.y = element_text(size = 12),
+                axis.title.x = element_text(size = 12),
+                axis.text.y = element_text(size = 12),
+                axis.text.x = element_text(size = 12),
+                legend.title = element_text(size = 12))
+        
+        # This line prints the ggplot object
+        print(p)
+      })
+      output[[paste0(item, "_plotly")]] <- renderPlotly({
+        # This line retrieves the full name of the item from the 'indicators' dataframe based on its code
+        full_name <- indicators$designacao[indicators$codigo_de_difusao == item]
+        # This line retrieves the data for the current item from the reactive function and converts it to a dataframe
+        data1 <- as.data.frame(result_list_reactive()[[item]]) %>%
+          # This line converts the 'valor' column to numeric and creates a 'year' column based on the last 4 characters of 'obs'
+          mutate(valor = as.numeric(valor),
+                 year = str_sub(obs, -4)) %>%
+          # This line sorts the data by 'obs' and 'year'
+          arrange(obs, year)
+        # This line creates a ggplot object with the data1 dataframe as input
+        p <- ggplot2::ggplot() +
+          # This line adds a line layer with 'obs' on the x-axis, 'valor' on the y-axis, 'geodsg' as color, and 'geodsg' as the grouping variable
+          geom_line(data = data1,
+                    aes(x = factor(obs, levels = unique(obs), ordered = TRUE),
+                        y = valor,
+                        colour = as.factor(geodsg),
+                        group = geodsg),
+                    linewidth = 1.2) +
+          # This line rotates the x-axis labels by 90 degrees
+          scale_x_discrete(guide = guide_axis(angle = 90)) +
+          # This line adds a legend for the color variable, using the name 'Localização Geográfica'
+          scale_color_discrete(name = "Localização Geográfica") +
+          # This line sets the chart limits to remove extra white space
+          coord_cartesian(expand = FALSE) +
+          # This line adds a chart title, subtitle, and caption
+          labs(x = "Observações",
+               y = "Valor",
+               title = full_name,
+               subtitle = paste0("Últimas ", length(unique(data1$obs)), " Observações"),
+               caption = "Fonte dos Dados: INE") +
+          # This line sets the chart style to minimal and customizes the font sizes
+          theme_minimal() +
+          theme(plot.title = element_text(size = 14, face = "bold"),
+                plot.subtitle = element_text(size = 12, face = "bold"),
+                axis.title.y = element_text(size = 12),
+                axis.title.x = element_text(size = 12),
+                axis.text.y = element_text(size = 12),
+                axis.text.x = element_text(size = 12),
+                legend.title = element_text(size = 12))
+        
+        p <- ggplotly(p)
+        # This line prints the ggplot object
+        print(p)
+      })
+      output[[paste0(item, "_plot1")]] <- renderPlot({
+        # This line retrieves the full name of the item from the 'indicators' dataframe based on its code
+        full_name <- indicators$designacao[indicators$codigo_de_difusao == item]
+        # This line retrieves the data for the current item from the reactive function and converts it to a dataframe
+        data1 <- as.data.frame(result_list_reactive()[[item]]) %>%
+          # This line converts the 'valor' column to numeric and creates a 'year' column based on the last 4 characters of 'obs'
+          mutate(valor = as.numeric(valor),
+                 year = str_sub(obs, -4)) %>%
+          # This line sorts the data by 'obs' and 'year'
+          arrange(obs, year)
+        if(any(str_detect(colnames(data1), "dim"))){
+          data1  <- data1%>%
+            select(ends_with("t")|!starts_with("dim"))
+        }
+        # This line creates a ggplot object with the data1 dataframe as input
+        p <- ggplot2::ggplot() +
+          # This line adds a line layer with 'obs' on the x-axis, 'valor' on the y-axis, 'geodsg' as color, and 'geodsg' as the grouping variable
+          geom_line(data = data1,
+                    aes(x = factor(obs, levels = unique(obs), ordered = TRUE),
+                        y = valor,
+                        colour = as.factor(geodsg),
+                        group = geodsg),
+                    linewidth = 1.2)
+        
+        if(any(str_detect(colnames(data1), "dim"))){
+          if(sum(str_detect(colnames(data1), "dim"))== 1){
+          p <- p+
+            facet_wrap(~dim_3_t, scales = "free")}
+          else if(sum(str_detect(colnames(data1), "dim"))== 2){
+            p <- p+
+              facet_wrap(~dim_3_t+dim_4_t, scales = "free")}
+        }
+          
+          # This line rotates the x-axis labels by 90 degrees
+        p <- p +
+          scale_x_discrete(guide = guide_axis(angle = 90)) +
+          # This line adds a legend for the color variable, using the name 'Localização Geográfica'
+          scale_color_discrete(name = "Localização Geográfica") +
+          # This line sets the chart limits to remove extra white space
           coord_cartesian(expand = FALSE) +
           # This line adds a chart title, subtitle, and caption
           labs(x = "Observações",
