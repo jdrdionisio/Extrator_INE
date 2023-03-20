@@ -462,6 +462,7 @@ ui <- navbarPage(
                       "Pedir Metainformação",
                       FALSE),
         actionButton("go", "Submeter", class = "btn-primary"),
+        actionButton("stop", "Reiniciar", class = "btn-primary"),
         br(),
         br(),
         checkboxInput(
@@ -871,12 +872,17 @@ server <- function(input, output, session) {
   })
   #
   result_list_reactive <- reactiveVal()
+
   meta_list_reactive <- reactiveVal()
   #
   dimmension_chosen <- reactiveVal()
 
   output$results_table <- NULL
   #
+observeEvent(input$stop,{
+  output$results_table <- NULL
+}, ignoreNULL = TRUE)
+
 observeEvent(input$go,{
     # Disable inputs
     shinyjs::disable(selector = "input")
@@ -896,7 +902,7 @@ observeEvent(input$go,{
         )
         result_list_reactive(result_list_updated)
         dimmension_chosen(c(input$other_groups_list, input$chosen_group_dropdown))
-        
+
         output$error <- NULL
         # Get the items from result_list_reactive
         items <- names(result_list_reactive())
@@ -955,7 +961,7 @@ observeEvent(input$go,{
     shinyjs::enable(selector = "input")
     shinyjs::enable(selector = "select")
     shinyjs::enable(selector = "button")
-  })
+  }, ignoreNULL = TRUE)
 # 
   # Render dataTables and download handlers and simple plot when result_list_reactive changes
 observe({
