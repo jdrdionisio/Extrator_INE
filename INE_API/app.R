@@ -389,7 +389,7 @@ ui <- navbarPage(
   ,spacer = "0.5rem", bootswatch = "minty"),
   # theme = bs_theme(), 
   # Change theme at will must activate bs_themer() in server
-  "Extrator INE v0.3",
+  "Extrator INE v0.3.1",
   nav(
     "Extração de dados",
     useShinyjs(),
@@ -516,10 +516,13 @@ ui <- navbarPage(
         p("- Corrigir o cálculo dos indicadores para distrito, ACES, ARS quando não são contagens;"),
         p("- Automatizar a procura dos indicadores disponíveis;"),
         p("- Permitir a manipulação de variáveis e visualizações;"),
-        p("- Melhoria da adaptação das visualizações;"),
         p("- Comentar o código."),
         br(),
         h2("Changelog"),
+        h3("V0.3.1"),
+        h4("2023-03-21"),
+        p("- Melhoria da adaptação das visualizações;"),
+        br(),
         h3("V0.3"),
         h4("2023-03-18"),
         p("- Melhorias visuais"),
@@ -923,10 +926,10 @@ observeEvent(input$go,{
             # set tooltip with full name
             h4(strong(full_name)),
             DTOutput(paste0(item, "_table")),
+            downloadButton(paste0(item, "_download"), paste0(item, ".csv")),
             plotOutput(paste0(item,"_plot")),
             plotlyOutput(paste0(item,"_plotly")),
             plotOutput(paste0(item,"_plot1"),height = "1200px", width ="auto"),
-            downloadButton(paste0(item, "_download"), paste0(item, ".csv")),
             if(input$meta_checkbox == TRUE){
               downloadButton(paste0(item,"meta", "_download"), paste0(item,"meta",".csv"))
             }
@@ -1014,39 +1017,121 @@ observe({
                  year = str_sub(obs, -4)) %>%
           # This line sorts the data by 'obs' and 'year'
           arrange(obs, year)
-        # This line creates a ggplot object with the data1 dataframe as input
-        p <- ggplot2::ggplot() +
-          # This line adds a line layer with 'obs' on the x-axis, 'valor' on the y-axis, 'geodsg' as color, and 'geodsg' as the grouping variable
-          geom_line(data = data1,
-                    aes(x = factor(obs, levels = unique(obs), ordered = TRUE),
-                        y = valor,
-                        colour = as.factor(geodsg),
-                        group = geodsg),
-                    linewidth = 1.2) +
-          # This line rotates the x-axis labels by 90 degrees
-          scale_x_discrete(guide = guide_axis(angle = 90)) +
-          # This line adds a legend for the color variable, using the name 'Localização Geográfica'
-          scale_color_discrete(name = "Localização Geográfica") +
-        # This line sets the chart limits to remove extra white space
-          coord_cartesian(expand = FALSE) +
-          # This line adds a chart title, subtitle, and caption
-          labs(x = "Observações",
-               y = "Valor",
-               title = full_name,
-               subtitle = paste0("Últimas ", length(unique(data1$obs)), " Observações"),
-               caption = "Fonte dos Dados: INE") +
-          # This line sets the chart style to minimal and customizes the font sizes
-          theme_minimal() +
-          theme(plot.title = element_text(size = 14, face = "bold"),
-                plot.subtitle = element_text(size = 12, face = "bold"),
-                axis.title.y = element_text(size = 12),
-                axis.title.x = element_text(size = 12),
-                axis.text.y = element_text(size = 12),
-                axis.text.x = element_text(size = 12),
-                legend.title = element_text(size = 12))
         
-        # This line prints the ggplot object
-        print(p)
+        if(any(str_detect(colnames(data1), "dim"))){
+          data1  <- data1%>%
+            select(ends_with("t")|!starts_with("dim"))
+        }
+        # This line creates a ggplot object with the data1 dataframe as input
+        if(any(str_detect(colnames(data1), "dim"))){
+          if(sum(str_detect(colnames(data1), "dim"))== 1){
+            data1<- data1%>% 
+              mutate(aggregate = interaction(geodsg, dim_3_t, sep = ", "))%>%
+              summarise(valor= sum(valor, na.rm = TRUE), .by = c(obs,aggregate,geodsg,dim_3_t,year))%>%
+              arrange(obs, year)
+            
+            
+            p <- ggplot2::ggplot() +
+              # This line adds a line layer with 'obs' on the x-axis, 'valor' on the y-axis, 'geodsg' as color, and 'geodsg' as the grouping variable
+              geom_line(data = data1,
+                        aes(x = factor(obs, levels = unique(obs), ordered = TRUE),
+                            y = valor,
+                            colour = dim_3_t,
+                            group = aggregate),
+                        linewidth = 1.2) +
+              facet_wrap(~geodsg, scales = "free")+
+              # This line rotates the x-axis labels by 90 degrees
+              scale_x_discrete(guide = guide_axis(angle = 90)) +
+              # This line adds a legend for the color variable, using the name 'Localização Geográfica'
+              scale_color_hue(name = "Localização Geográfica") +
+              scale_color_hue(direction=1, aesthetics = "group")+
+              # This line sets the chart limits to remove extra white space
+              coord_cartesian(expand = FALSE) +
+              # This line adds a chart title, subtitle, and caption
+              labs(x = "Observações",
+                   y = "Valor",
+                   title = full_name,
+                   subtitle = paste0("Últimas ", length(unique(data1$obs)), " Observações"),
+                   caption = "Fonte dos Dados: INE") +
+              # This line sets the chart style to minimal and customizes the font sizes
+              theme_minimal() +
+              theme(plot.title = element_text(size = 14, face = "bold"),
+                    plot.subtitle = element_text(size = 12, face = "bold"),
+                    axis.title.y = element_text(size = 12),
+                    axis.title.x = element_text(size = 12),
+                    axis.text.y = element_text(size = 12),
+                    axis.text.x = element_text(size = 12),
+                    legend.title = element_text(size = 12))
+            
+            }else if(sum(str_detect(colnames(data1), "dim"))== 2){
+              #WORKING ON IT
+              p <- ggplot2::ggplot() +
+                # This line adds a line layer with 'obs' on the x-axis, 'valor' on the y-axis, 'geodsg' as color, and 'geodsg' as the grouping variable
+                geom_line(data = data1,
+                          aes(x = factor(obs, levels = unique(obs), ordered = TRUE),
+                              y = valor,
+                              colour = as.factor(geodsg),
+                              group = interaction(geodsg, dim_3_t, dim_4_t, sep = "-")),
+                          linewidth = 1.2) +
+                # This line rotates the x-axis labels by 90 degrees
+                scale_x_discrete(guide = guide_axis(angle = 90)) +
+                # This line adds a legend for the color variable, using the name 'Localização Geográfica'
+                scale_color_discrete(name = "Localização Geográfica") +
+                # This line sets the chart limits to remove extra white space
+                coord_cartesian(expand = FALSE) +
+                # This line adds a chart title, subtitle, and caption
+                labs(x = "Observações",
+                     y = "Valor",
+                     title = full_name,
+                     subtitle = paste0("Últimas ", length(unique(data1$obs)), " Observações"),
+                     caption = "Fonte dos Dados: INE") +
+                # This line sets the chart style to minimal and customizes the font sizes
+                theme_minimal() +
+                theme(plot.title = element_text(size = 14, face = "bold"),
+                      plot.subtitle = element_text(size = 12, face = "bold"),
+                      axis.title.y = element_text(size = 12),
+                      axis.title.x = element_text(size = 12),
+                      axis.text.y = element_text(size = 12),
+                      axis.text.x = element_text(size = 12),
+                      legend.title = element_text(size = 12))
+              
+            }else{
+              p <- NULL
+            }
+          }else{
+              p <- ggplot2::ggplot() +
+                # This line adds a line layer with 'obs' on the x-axis, 'valor' on the y-axis, 'geodsg' as color, and 'geodsg' as the grouping variable
+                geom_line(data = data1,
+                          aes(x = factor(obs, levels = unique(obs), ordered = TRUE),
+                              y = valor,
+                              colour = as.factor(geodsg),
+                              group = geodsg),
+                          linewidth = 1.2) +
+                # This line rotates the x-axis labels by 90 degrees
+                scale_x_discrete(guide = guide_axis(angle = 90)) +
+                # This line adds a legend for the color variable, using the name 'Localização Geográfica'
+                scale_color_discrete(name = "Localização Geográfica") +
+                # This line sets the chart limits to remove extra white space
+                coord_cartesian(expand = FALSE) +
+                # This line adds a chart title, subtitle, and caption
+                labs(x = "Observações",
+                     y = "Valor",
+                     title = full_name,
+                     subtitle = paste0("Últimas ", length(unique(data1$obs)), " Observações"),
+                     caption = "Fonte dos Dados: INE") +
+                # This line sets the chart style to minimal and customizes the font sizes
+                theme_minimal() +
+                theme(plot.title = element_text(size = 14, face = "bold"),
+                      plot.subtitle = element_text(size = 12, face = "bold"),
+                      axis.title.y = element_text(size = 12),
+                      axis.title.x = element_text(size = 12),
+                      axis.text.y = element_text(size = 12),
+                      axis.text.x = element_text(size = 12),
+                      legend.title = element_text(size = 12))
+            }
+            
+            # This line prints the ggplot object
+            print(p)
       })
       output[[paste0(item, "_plotly")]] <- renderPlotly({
         # This line retrieves the full name of the item from the 'indicators' dataframe based on its code
@@ -1058,37 +1143,118 @@ observe({
                  year = str_sub(obs, -4)) %>%
           # This line sorts the data by 'obs' and 'year'
           arrange(obs, year)
-        # This line creates a ggplot object with the data1 dataframe as input
-        p <- ggplot2::ggplot() +
-          # This line adds a line layer with 'obs' on the x-axis, 'valor' on the y-axis, 'geodsg' as color, and 'geodsg' as the grouping variable
-          geom_line(data = data1,
-                    aes(x = factor(obs, levels = unique(obs), ordered = TRUE),
-                        y = valor,
-                        colour = as.factor(geodsg),
-                        group = geodsg),
-                    linewidth = 1.2) +
-          # This line rotates the x-axis labels by 90 degrees
-          scale_x_discrete(guide = guide_axis(angle = 90)) +
-          # This line adds a legend for the color variable, using the name 'Localização Geográfica'
-          scale_color_discrete(name = "Localização Geográfica") +
-          # This line sets the chart limits to remove extra white space
-          coord_cartesian(expand = FALSE) +
-          # This line adds a chart title, subtitle, and caption
-          labs(x = "Observações",
-               y = "Valor",
-               title = full_name,
-               subtitle = paste0("Últimas ", length(unique(data1$obs)), " Observações"),
-               caption = "Fonte dos Dados: INE") +
-          # This line sets the chart style to minimal and customizes the font sizes
-          theme_minimal() +
-          theme(plot.title = element_text(size = 14, face = "bold"),
-                plot.subtitle = element_text(size = 12, face = "bold"),
-                axis.title.y = element_text(size = 12),
-                axis.title.x = element_text(size = 12),
-                axis.text.y = element_text(size = 12),
-                axis.text.x = element_text(size = 12),
-                legend.title = element_text(size = 12))
         
+        if(any(str_detect(colnames(data1), "dim"))){
+          data1  <- data1%>%
+            select(ends_with("t")|!starts_with("dim"))
+        }
+        # This line creates a ggplot object with the data1 dataframe as input
+        if(any(str_detect(colnames(data1), "dim"))){
+          if(sum(str_detect(colnames(data1), "dim"))== 1){
+            data1<- data1%>% 
+              mutate(aggregate = interaction(geodsg, dim_3_t, sep = ", "))%>%
+              summarise(valor= sum(valor, na.rm = TRUE), .by = c(obs,aggregate,geodsg,dim_3_t,year))%>%
+              arrange(obs, year)
+            
+            
+            p <- ggplot2::ggplot() +
+              # This line adds a line layer with 'obs' on the x-axis, 'valor' on the y-axis, 'geodsg' as color, and 'geodsg' as the grouping variable
+              geom_line(data = data1,
+                        aes(x = factor(obs, levels = unique(obs), ordered = TRUE),
+                            y = valor,
+                            colour = dim_3_t,
+                            group = aggregate),
+                        linewidth = 1.2) +
+              facet_wrap(~geodsg, scales = "free")+
+              # This line rotates the x-axis labels by 90 degrees
+              scale_x_discrete(guide = guide_axis(angle = 90)) +
+              # This line adds a legend for the color variable, using the name 'Localização Geográfica'
+              scale_color_hue(name = "Localização Geográfica") +
+              scale_color_hue(direction=1, aesthetics = "group")+
+              # This line sets the chart limits to remove extra white space
+              coord_cartesian(expand = FALSE) +
+              # This line adds a chart title, subtitle, and caption
+              labs(x = "Observações",
+                   y = "Valor",
+                   title = full_name,
+                   subtitle = paste0("Últimas ", length(unique(data1$obs)), " Observações"),
+                   caption = "Fonte dos Dados: INE") +
+              # This line sets the chart style to minimal and customizes the font sizes
+              theme_minimal() +
+              theme(plot.title = element_text(size = 14, face = "bold"),
+                    plot.subtitle = element_text(size = 12, face = "bold"),
+                    axis.title.y = element_text(size = 12),
+                    axis.title.x = element_text(size = 12),
+                    axis.text.y = element_text(size = 12),
+                    axis.text.x = element_text(size = 12),
+                    legend.title = element_text(size = 12))
+            
+          }else if(sum(str_detect(colnames(data1), "dim"))== 2){
+            #WORKING ON IT
+            p <- ggplot2::ggplot() +
+              # This line adds a line layer with 'obs' on the x-axis, 'valor' on the y-axis, 'geodsg' as color, and 'geodsg' as the grouping variable
+              geom_line(data = data1,
+                        aes(x = factor(obs, levels = unique(obs), ordered = TRUE),
+                            y = valor,
+                            colour = as.factor(geodsg),
+                            group = interaction(geodsg, dim_3_t, dim_4_t, sep = "-")),
+                        linewidth = 1.2) +
+              # This line rotates the x-axis labels by 90 degrees
+              scale_x_discrete(guide = guide_axis(angle = 90)) +
+              # This line adds a legend for the color variable, using the name 'Localização Geográfica'
+              scale_color_discrete(name = "Localização Geográfica") +
+              # This line sets the chart limits to remove extra white space
+              coord_cartesian(expand = FALSE) +
+              # This line adds a chart title, subtitle, and caption
+              labs(x = "Observações",
+                   y = "Valor",
+                   title = full_name,
+                   subtitle = paste0("Últimas ", length(unique(data1$obs)), " Observações"),
+                   caption = "Fonte dos Dados: INE") +
+              # This line sets the chart style to minimal and customizes the font sizes
+              theme_minimal() +
+              theme(plot.title = element_text(size = 14, face = "bold"),
+                    plot.subtitle = element_text(size = 12, face = "bold"),
+                    axis.title.y = element_text(size = 12),
+                    axis.title.x = element_text(size = 12),
+                    axis.text.y = element_text(size = 12),
+                    axis.text.x = element_text(size = 12),
+                    legend.title = element_text(size = 12))
+            
+          }else{
+            p <- NULL
+          }
+        }else{
+          p <- ggplot2::ggplot() +
+            # This line adds a line layer with 'obs' on the x-axis, 'valor' on the y-axis, 'geodsg' as color, and 'geodsg' as the grouping variable
+            geom_line(data = data1,
+                      aes(x = factor(obs, levels = unique(obs), ordered = TRUE),
+                          y = valor,
+                          colour = as.factor(geodsg),
+                          group = geodsg),
+                      linewidth = 1.2) +
+            # This line rotates the x-axis labels by 90 degrees
+            scale_x_discrete(guide = guide_axis(angle = 90)) +
+            # This line adds a legend for the color variable, using the name 'Localização Geográfica'
+            scale_color_discrete(name = "Localização Geográfica") +
+            # This line sets the chart limits to remove extra white space
+            coord_cartesian(expand = FALSE) +
+            # This line adds a chart title, subtitle, and caption
+            labs(x = "Observações",
+                 y = "Valor",
+                 title = full_name,
+                 subtitle = paste0("Últimas ", length(unique(data1$obs)), " Observações"),
+                 caption = "Fonte dos Dados: INE") +
+            # This line sets the chart style to minimal and customizes the font sizes
+            theme_minimal() +
+            theme(plot.title = element_text(size = 14, face = "bold"),
+                  plot.subtitle = element_text(size = 12, face = "bold"),
+                  axis.title.y = element_text(size = 12),
+                  axis.title.x = element_text(size = 12),
+                  axis.text.y = element_text(size = 12),
+                  axis.text.x = element_text(size = 12),
+                  legend.title = element_text(size = 12))
+        }
         p <- ggplotly(p)
         # This line prints the ggplot object
         print(p)
@@ -1124,8 +1290,10 @@ observe({
           else if(sum(str_detect(colnames(data1), "dim"))== 2){
             p <- p+
               facet_wrap(~dim_3_t+dim_4_t, scales = "free")}
+          else{
+            p <- NULL
+          }
         }
-          
           # This line rotates the x-axis labels by 90 degrees
         p <- p +
           scale_x_discrete(guide = guide_axis(angle = 90)) +

@@ -64,13 +64,11 @@ Indicadores <- Indicadores %>%
   filter(`Disponível no Portal`== "Sim")
 , ordered= TRUE
 
-graph_test <- X0009817 %>%
-  filter(aces2=="ACeS Baixo Mondego")%>%
+graph_test <- X0008639 %>%
+  # filter(aces2=="ACeS Baixo Mondego")%>%
   mutate(valor = as.numeric(valor))%>%
-  mutate(year2 = str_sub(year,-4))%>%
-  arrange(year2, year)%>%
-  mutate(dim = 3)%>%
-  mutate(dim_t = 4)
+  mutate(year = str_sub(obs,-4))%>%
+  arrange(obs, year)
 
 if(any(str_detect(colnames(graph_test), "dim"))){
           graph_test <- graph_test%>%
@@ -79,37 +77,84 @@ if(any(str_detect(colnames(graph_test), "dim"))){
 
 graph_test 
 
-str_detect(colnames(graph_test),"t$")
+graph_test <- graph_test%>% 
+ mutate(test = interaction(dim_4_t, dim_3_t, sep = ", "))%>%
+ summarise(valor= sum(valor, na.rm = TRUE), .by = c(obs,test,geodsg, year))
+ 
+graph_test
 
-test1 <- str_view(colnames(graph_test), "dim")
+Ideia 1 
 
-matches(ends_with("t$", colnames(graph_test)))
+ggplot2::ggplot() +
+                # This line adds a line layer with 'obs' on the x-axis, 'valor' on the y-axis, 'geodsg' as color, and 'geodsg' as the grouping variable
+                geom_line(data = graph_test,
+                          aes(x = factor(obs, levels = unique(obs), ordered = TRUE),
+                              y = valor,
+                              colour = test)
+                              ,linewidth = 1.2) +
+                facet_wrap(~geodsg, scales = "free")+
+                # This line rotates the x-axis labels by 90 degrees
+                scale_x_discrete(guide = guide_axis(angle = 90)) +
+                # This line adds a legend for the color variable, using the name 'Localização Geográfica'
+                scale_color_discrete(name = "Localização Geográfica e 3ª dimensão")+
+                coord_cartesian(expand = FALSE)+
+                labs(
+                  x = "Observações",
+                  y = "Valor",
+                  title = "Teste",
+                  caption = "Fonte dos Dados:INE",
+                  # color = "Localização Geográfica"
+                ) +
+                theme_minimal()
 
-if(any(str_detect(colnames(graph_test), "dim"))){
-  graph_test <- graph_test%>%
-    select(!ends_with("t"))
-}
+2 ideia
 
-     
-ggplot() +
-  geom_line(data = graph_test, aes(x = factor(year, levels=unique(year),ordered= TRUE)
-                                   ,y = as.numeric(valor), colour = geodsg, group= geodsg), linewidth = 1.2)
+ data1<- data1%>% 
+              mutate(aggregate = interaction(geodsg, dim_3_t, sep = ", "))%>%
+              summarise(valor= sum(valor, na.rm = TRUE), .by = c(obs,aggregate,geodsg,dim_3_t,year))%>%
+              arrange(obs, year)
+            
+            
+            p <- ggplot2::ggplot() +
+              # This line adds a line layer with 'obs' on the x-axis, 'valor' on the y-axis, 'geodsg' as color, and 'geodsg' as the grouping variable
+              geom_line(data = data1,
+                        aes(x = factor(obs, levels = unique(obs), ordered = TRUE),
+                            y = valor,
+                            colour = dim_3_t,
+                            group = aggregate),
+                        linewidth = 1.2) +
+              facet_wrap(~geodsg, scales = "free")+
+              # This line rotates the x-axis labels by 90 degrees
+              scale_x_discrete(guide = guide_axis(angle = 90)) +
+              # This line adds a legend for the color variable, using the name 'Localização Geográfica'
+              scale_color_hue(name = "Localização Geográfica") +
+              scale_color_hue(direction=1, aesthetics = "group")+
+              # This line sets the chart limits to remove extra white space
+              coord_cartesian(expand = FALSE) +
+              # This line adds a chart title, subtitle, and caption
+              labs(x = "Observações",
+                   y = "Valor",
+                   title = full_name,
+                   subtitle = paste0("Últimas ", length(unique(data1$obs)), " Observações"),
+                   caption = "Fonte dos Dados: INE") +
+              # This line sets the chart style to minimal and customizes the font sizes
+              theme_minimal() +
+              theme(plot.title = element_text(size = 14, face = "bold"),
+                    plot.subtitle = element_text(size = 12, face = "bold"),
+                    axis.title.y = element_text(size = 12),
+                    axis.title.x = element_text(size = 12),
+                    axis.text.y = element_text(size = 12),
+                    axis.text.x = element_text(size = 12),
+                    legend.title = element_text(size = 12))
+
+# ggplot() +
+#   geom_line(data = graph_test, aes(x = factor(year, levels=unique(year),ordered= TRUE),y = as.numeric(valor), colour = geodsg test), linewidth = 1.2) +
+#   scale_x_discrete(guide = guide_axis(angle = 90))+
+#   # scale_color_discrete(name = "Localização Geográfica") +
+#   scale_color_hue(direction=1, aesthetics = "colour")+
 
 
-+
-  scale_x_discrete(guide = guide_axis(angle = 90))+
-  scale_color_hue(direction = 1) +
-  coord_cartesian(expand = FALSE)+
-  labs(
-    x = "Observações",
-    y = "Valor",
-    title = "Teste",
-    caption = "Fonte dos Dados:INE",
-    color = "Localização Geográfica"
-  ) +
-  theme_minimal()
-
-length(unique(graph_test$year))
+# length(unique(graph_test$year))
 ```
 
 Exemplo Simples de como funciona a app
