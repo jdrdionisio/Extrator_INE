@@ -307,74 +307,241 @@ ine.get <- function(indicators,selected_areas,observation_requested, result_list
           success <- sort(c(success, l))
         }
       }
-      # # Runs the synthetic groups if requested and possible
-      # if (any(c("Distrito", "ACES", "ARS") %in% groups_chosen) & min(success) < 4) {
-      #   if (1 %in% success) {
-      #     level_names_success <- level_names_reference[1]
-      #   } else if (2 %in% success) {
-      #     level_names_success <- level_names_reference[2]
-      #   } else if (3 %in% success) {
-      #     level_names_success <- level_names_reference[3]
-      #   }
-      #   if ("Distrito" %in% groups_chosen) {
-      #     result_list[[indicators_current]] <- bind_rows(
-      #       result_list[[indicators_current]],
-      #       result_list[[indicators_current]] |>
-      #         # Adds the geographical information
-      #         left_join(geo_chosen,
-      #           by = c("geocod" = as.character(level_names_success)),
-      #           multiple = "first"
-      #         ) |>
-      #         # Groups the results
-      #         summarise(
-      #           geocod = distrito_2013_cod,
-      #           geodsg = distrito_2013,
-      #           valor = sum(valor),
-      #           obs = obs,
-      #           .by = c(obs, distrito_2013)) |>
-      #         select(geocod, geodsg, valor, obs) |>
-      #         unique()
-      #     )
-      #   } else if ("ACES" %in% groups_chosen) {
-      #     result_list[[indicators_current]] <- bind_rows(
-      #       result_list[[indicators_current]],
-      #       result_list[[indicators_current]] |>
-      #         # Adds the geographical information
-      #         left_join(geo_chosen,
-      #           by = c("geocod" = as.character(level_names_success)),
-      #           multiple = "first"
-      #         ) |>
-      #         # Groups the results
-      #         summarise(
-      #           geocod = aces_2022_cod,
-      #           geodsg = aces_2022,
-      #           valor = sum(valor),
-      #           obs = obs,
-      #           .by = c(obs, aces_2022)) |>
-      #         select(geocod, geodsg, valor, obs) |>
-      #         unique()
-      #     )
-      #   } else if ("ARS" %in% groups_chosen) {
-      #     result_list[[indicators_current]] <- bind_rows(
-      #       result_list[[indicators_current]],
-      #       result_list[[indicators_current]] |>
-      #         # Adds the geographical information
-      #         left_join(geo_chosen,
-      #           by = c("geocod" = as.character(level_names_success)),
-      #           multiple = "first"
-      #         ) |>
-      #         # Groups the results
-      #         summarise(
-      #           geocod = ars_2022_cod,
-      #           geodsg = ars_2022,
-      #           valor = sum(valor),
-      #           obs = obs,
-      #           .by = c(obs, ars_2022)) |>
-      #         select(geocod, geodsg, valor, obs) |>
-      #         unique()
-      #     )
-      #   }
-      # }
+      # Runs the synthetic groups if requested and possible
+      if (any(c("Distrito", "ACES", "ARS") %in% groups_chosen) & min(success) < 4) {
+        if (1 %in% success) {
+          level_names_success <- level_names_reference[1]
+        } else if (2 %in% success) {
+          level_names_success <- level_names_reference[2]
+        } else if (3 %in% success) {
+          level_names_success <- level_names_reference[3]
+        }
+        if ("Distrito" %in% groups_chosen) {
+          if(any(str_detect(colnames(result_list[[indicators_current]]), "dim"))){
+            if(sum(str_detect(colnames(result_list[[indicators_current]]), "dim"))== 1){
+          result_list[[indicators_current]] <- bind_rows(
+            result_list[[indicators_current]],
+            result_list[[indicators_current]] |>
+              # Adds the geographical information
+              left_join(geo_chosen,
+                by = c("geocod" = as.character(level_names_success)),
+                multiple = "first"
+              ) |>
+              # Groups the results
+              summarise(
+                geocod = distrito_2013_cod,
+                geodsg = distrito_2013,
+                valor = sum(valor,na.rm=TRUE),
+                # obs = obs,
+                .by = c(obs, distrito_2013, dim_3, dim_3_t)) |>
+              select(geocod, geodsg, valor, obs) |>
+              unique()
+          )}else if(sum(str_detect(colnames(result_list[[indicators_current]]), "dim"))== 2){
+            result_list[[indicators_current]] <- bind_rows(
+              result_list[[indicators_current]],
+              result_list[[indicators_current]] |>
+                # Adds the geographical information
+                left_join(geo_chosen,
+                          by = c("geocod" = as.character(level_names_success)),
+                          multiple = "first"
+                ) |>
+                # Groups the results
+                summarise(
+                  geocod = distrito_2013_cod,
+                  geodsg = distrito_2013,
+                  valor = sum(valor,na.rm=TRUE),
+                  # obs = obs,
+                  .by = c(obs, distrito_2013, dim_3, dim_3_t, dim_4, dim_4_t)) |>
+                select(geocod, geodsg, valor, obs) |>
+                unique())}
+            else if(sum(str_detect(colnames(result_list[[indicators_current]]), "dim"))== 3){
+              result_list[[indicators_current]] <- bind_rows(
+                result_list[[indicators_current]],
+                result_list[[indicators_current]] |>
+                  # Adds the geographical information
+                  left_join(geo_chosen,
+                            by = c("geocod" = as.character(level_names_success)),
+                            multiple = "first"
+                  ) |>
+                  # Groups the results
+                  summarise(
+                    geocod = distrito_2013_cod,
+                    geodsg = distrito_2013,
+                    valor = sum(valor,na.rm=TRUE),
+                    # obs = obs,
+                    .by = c(obs, distrito_2013, dim_3, dim_3_t, dim_4, dim_4_t, dim_5, dim_5_t)) |>
+                  select(geocod, geodsg, valor, obs) |>
+                  unique())}
+            }else{ result_list[[indicators_current]] <- bind_rows(
+            result_list[[indicators_current]],
+            result_list[[indicators_current]] |>
+              # Adds the geographical information
+              left_join(geo_chosen,
+                        by = c("geocod" = as.character(level_names_success)),
+                        multiple = "first"
+              ) |>
+              # Groups the results
+              summarise(
+                geocod = distrito_2013_cod,
+                geodsg = distrito_2013,
+                valor = sum(valor,na.rm=TRUE),
+                # obs = obs,
+                .by = c(obs, distrito_2013)) |>
+              select(geocod, geodsg, valor, obs) |>
+              unique())}
+        } else if ("ACES" %in% groups_chosen) {
+          if(any(str_detect(colnames(result_list[[indicators_current]]), "dim"))){
+            if(sum(str_detect(colnames(result_list[[indicators_current]]), "dim"))== 1){
+              result_list[[indicators_current]] <- bind_rows(
+                result_list[[indicators_current]],
+                result_list[[indicators_current]] |>
+                  # Adds the geographical information
+                  left_join(geo_chosen,
+                            by = c("geocod" = as.character(level_names_success)),
+                            multiple = "first"
+                  ) |>
+                  # Groups the results
+                  summarise(
+                    geocod = aces_2022_cod,
+                    geodsg = aces_2022,
+                    valor = sum(valor, na.rm = TRUE),
+                    # obs = obs,
+                    .by = c(obs, aces_2022)
+                  ) |>
+                  dplyr::select(geocod, geodsg, valor, obs) |>
+                  unique()
+              )}else if(sum(str_detect(colnames(result_list[[indicators_current]]), "dim"))== 2){
+                result_list[[indicators_current]] <- bind_rows(
+                  result_list[[indicators_current]],
+                  result_list[[indicators_current]] |>
+                    # Adds the geographical information
+                    left_join(geo_chosen,
+                              by = c("geocod" = as.character(level_names_success)),
+                              multiple = "first"
+                    ) |>
+                    # Groups the results
+                    summarise(
+                      geocod = aces_2022_cod,
+                      geodsg = aces_2022,
+                      valor = sum(valor, na.rm = TRUE),
+                      # obs = obs,
+                      .by = c(obs, aces_2022)
+                    ) |>
+                    dplyr::select(geocod, geodsg, valor, obs) |>
+                    unique())}
+            else if(sum(str_detect(colnames(result_list[[indicators_current]]), "dim"))== 3){
+              result_list[[indicators_current]] <- bind_rows(
+                result_list[[indicators_current]],
+                result_list[[indicators_current]] |>
+                  # Adds the geographical information
+                  left_join(geo_chosen,
+                            by = c("geocod" = as.character(level_names_success)),
+                            multiple = "first"
+                  ) |>
+                  # Groups the results
+                  summarise(
+                    geocod = aces_2022_cod,
+                    geodsg = aces_2022,
+                    valor = sum(valor, na.rm = TRUE),
+                    # obs = obs,
+                    .by = c(obs, aces_2022)
+                  ) |>
+                  dplyr::select(geocod, geodsg, valor, obs) |>
+                  unique())}
+          }else{ result_list[[indicators_current]] <- bind_rows(
+            result_list[[indicators_current]],
+            result_list[[indicators_current]] |>
+              # Adds the geographical information
+              left_join(geo_chosen,
+                        by = c("geocod" = as.character(level_names_success)),
+                        multiple = "first"
+              ) |>
+              # Groups the results
+              summarise(
+                geocod = aces_2022_cod,
+                geodsg = aces_2022,
+                valor = sum(valor, na.rm = TRUE),
+                # obs = obs,
+                .by = c(obs, aces_2022)
+              ) |>
+              dplyr::select(geocod, geodsg, valor, obs) |>
+              unique())}
+        } else if ("ARS" %in% groups_chosen) {
+          if(any(str_detect(colnames(result_list[[indicators_current]]), "dim"))){
+            if(sum(str_detect(colnames(result_list[[indicators_current]]), "dim"))== 1){
+              result_list[[indicators_current]] <- bind_rows(
+                result_list[[indicators_current]],
+                result_list[[indicators_current]] |>
+                  # Adds the geographical information
+                  left_join(geo_chosen,
+                            by = c("geocod" = as.character(level_names_success)),
+                            multiple = "first"
+                  ) |>
+                  # Groups the results
+                  summarise(
+                    geocod = ars_2022_cod,
+                    geodsg = ars_2022,
+                    valor = sum(valor, na.rm=TRUE),
+                    # obs = obs,
+                    .by = c(obs, ars_2022)) |>
+                  select(geocod, geodsg, valor, obs) |>
+                  unique()
+              )}else if(sum(str_detect(colnames(result_list[[indicators_current]]), "dim"))== 2){
+                result_list[[indicators_current]] <- bind_rows(
+                  result_list[[indicators_current]],
+                  result_list[[indicators_current]] |>
+                    # Adds the geographical information
+                    left_join(geo_chosen,
+                              by = c("geocod" = as.character(level_names_success)),
+                              multiple = "first"
+                    ) |>
+                    # Groups the results
+                    summarise(
+                      geocod = ars_2022_cod,
+                      geodsg = ars_2022,
+                      valor = sum(valor, na.rm=TRUE),
+                      # obs = obs,
+                      .by = c(obs, ars_2022)) |>
+                    select(geocod, geodsg, valor, obs) |>
+                    unique())}
+            else if(sum(str_detect(colnames(result_list[[indicators_current]]), "dim"))== 3){
+              result_list[[indicators_current]] <- bind_rows(
+                result_list[[indicators_current]],
+                result_list[[indicators_current]] |>
+                  # Adds the geographical information
+                  left_join(geo_chosen,
+                            by = c("geocod" = as.character(level_names_success)),
+                            multiple = "first"
+                  ) |>
+                  # Groups the results
+                  summarise(
+                    geocod = ars_2022_cod,
+                    geodsg = ars_2022,
+                    valor = sum(valor, na.rm=TRUE),
+                    # obs = obs,
+                    .by = c(obs, ars_2022)) |>
+                  select(geocod, geodsg, valor, obs) |>
+                  unique())}
+          }else{ result_list[[indicators_current]] <- bind_rows(
+            result_list[[indicators_current]],
+            result_list[[indicators_current]] |>
+              # Adds the geographical information
+              left_join(geo_chosen,
+                        by = c("geocod" = as.character(level_names_success)),
+                        multiple = "first"
+              ) |>
+              # Groups the results
+              # Groups the results
+              summarise(
+                geocod = ars_2022_cod,
+                geodsg = ars_2022,
+                valor = sum(valor, na.rm=TRUE),
+                # obs = obs,
+                .by = c(obs, ars_2022)) |>
+              select(geocod, geodsg, valor, obs) |>
+              unique())}
+        }
+      }
     }
     return(result_list)
   }
@@ -389,7 +556,7 @@ ui <- navbarPage(
   ,spacer = "0.5rem", bootswatch = "minty"),
   # theme = bs_theme(), 
   # Change theme at will must activate bs_themer() in server
-  "Extrator INE v0.3.1",
+  "Extrator INE v0.3.2",
   nav(
     "Extração de dados",
     useShinyjs(),
@@ -512,13 +679,20 @@ ui <- navbarPage(
       ),
       mainPanel(
         h3("Próximas melhorias"),
-        p("- Corrigir o cálculo dos indicadores para distrito, ACES, ARS quando há múltiplas dimensões;"),
         p("- Corrigir o cálculo dos indicadores para distrito, ACES, ARS quando não são contagens;"),
+        p("- Remoção das variáveis para cálculo de dimensões não administrativas do INE (Distrito, ACES e ARS)"),
         p("- Automatizar a procura dos indicadores disponíveis;"),
-        p("- Permitir a manipulação de variáveis e visualizações;"),
-        p("- Comentar o código."),
+        p("- Melhoria na manipulação de variáveis e visualizações;"),
+        p("- Indicadores base em datasets base para evitar extração INE constante."),
         br(),
         h2("Changelog"),
+        h3("V0.3.5"),
+        h4("2023-05-17"),
+        p("- Corrigir o cálculo dos indicadores para distrito, ACES, ARS quando há múltiplas dimensões (até 5 dimensões);"),
+        p("- Adicionado filtro em tabela para manipulação dos resultados;"),
+        p("- Otimização do código dos gráficos"),
+        p("- Comentado código."),
+        br(),
         h3("V0.3.1"),
         h4("2023-03-21"),
         p("- Melhoria da adaptação das visualizações;"),
@@ -545,7 +719,12 @@ ui <- navbarPage(
         h4("2023-03-14"),
         p("- Redução do tempo entre chamadas ao servidor;"),
         p("- Otimização do número de uniões dos resultados recebidos;"),
-        p("- Correção de erro na listagem dos municípios.")
+        p("- Correção de erro na listagem dos municípios."),
+        h2("Bugs Conhecidos"),
+        h4("Em 2023-03-17"),
+        p("- Problema na escolha de várias agregações superiores e inferiores que não permite filtro só do que foi pedido;"),
+        p("- Botão de submissão apenas respeitado na primeira submissão. O programa não respeita o botão após, necessidade de criar botão reiniciar;"),
+        p("- Extrações de todas as freguesias do país em múltiplos indicadores leva a quebra do sistema.")
       )
     )
   )
@@ -654,7 +833,7 @@ server <- function(input, output, session) {
         "chosen_items",
         "Selecionar itens a incluir:",
         choices = NULL,
-        multiple = TRUE,
+        multiple = TRUE
       )
     }
   })
@@ -714,27 +893,31 @@ server <- function(input, output, session) {
       other_groups <-
         c(
           "Município",
-          # "Distrito",
+          "Distrito",
           "NUTS III",
           "NUTS II",
           "NUTS I",
-          "País"
+          "País",
+          "ACES",
         )
     } else if (input$chosen_group_dropdown == "Município") {
       other_groups <-
         c(
           "Freguesia",
-          # "Distrito",
+          "Distrito",
           "NUTS III",
           "NUTS II",
           "NUTS I",
-          "País"
+          "País",
+          "ACES",
+          "ARS"
         )
     } else if (input$chosen_group_dropdown == "Distrito") {
       other_groups <-
         c(
           "Freguesia",
-          "Município" # ,
+          "Município",
+          "ARS"# ,
           # "NUTS III",
           # "NUTS II",
           # "NUTS I",
@@ -745,7 +928,7 @@ server <- function(input, output, session) {
         c(
           "Freguesia",
           "Município",
-          # "Distrito",
+          "Distrito",
           "NUTS II",
           "NUTS I",
           "País"
@@ -755,7 +938,7 @@ server <- function(input, output, session) {
         c(
           "Freguesia",
           "Município",
-          # "Distrito",
+          "Distrito",
           "NUTS III",
           "NUTS I",
           "País"
@@ -785,12 +968,12 @@ server <- function(input, output, session) {
         c(
           "Freguesia",
           "Município",
-          # "Distrito",
+          #"Distrito",
           "NUTS III",
           "NUTS II",
           "NUTS I",
-          "País" # ,
-          # "ARS"
+          "País", # ,
+          "ARS"
         )
     } else if (input$chosen_group_dropdown == "ARS") {
       other_groups <-
@@ -824,6 +1007,7 @@ server <- function(input, output, session) {
   })
   # Create a reactive function for the focused area codes
   filtered_area <- reactive({
+    if(is.null(input$other_groups_list)|(!("Distrito"%in%input$other_groups_list)&!("ACES"%in%input$other_groups_list)&!("ARS"%in%input$other_groups_list))){
     filtered <-
       geo_lookup |> filter(chosen_group_options$available_items %in% input$chosen_items)
     # Sets lists of codes for debug panel
@@ -844,7 +1028,109 @@ server <- function(input, output, session) {
         f_municipio_2002 = f_municipio_2002
       )
     )
-  })
+    }else if("ARS" %in% input$other_groups_list){
+      filtered <-
+        geo_lookup |> filter(chosen_group_options$available_items %in% input$chosen_items)
+      extra <- unique(filtered$ars_2022)
+      extra1 <- unique(filtered$ars_2022_cod)
+      # if("Distrito"%in% input$other_groups_list){
+      #   extra2 <- unique(filtered$distrito_2013_cod)}else{
+      #     extra2 <- c()
+      #   }
+      # if("ACES" %in% input$other_groups_list){
+      #   extra3 <- unique(filtered$aces_2022_cod)}else{
+      #     extra3 <- c()
+      #   }
+      filtered <-
+        geo_lookup |> filter(ars_2022 %in% extra)
+      # Sets lists of codes for debug panel
+      f_freguesia <- filtered |>
+        pull(dicofre_2013) |>
+        unique()
+      f_municipio_2013 <- filtered |>
+        pull(municipio_2013_cod) |>
+        unique()
+      f_municipio_2002 <- filtered |>
+        pull(municipio_2002_cod) |>
+        unique()
+      return(
+        list(
+          filtered_table = filtered,
+          f_freguesia = f_freguesia,
+          f_municipio_2013 = f_municipio_2013,
+          f_municipio_2002 = f_municipio_2002,
+          extra1=extra1
+          # extra2=extra2,
+          # extra3=extra3
+        )
+      )
+    }else if("Distrito"%in%input$other_groups_list){
+      filtered <-
+        geo_lookup |> filter(chosen_group_options$available_items %in% input$chosen_items)
+      extra <- unique(filtered$distrito_2013)
+      extra1 <- unique(filtered$distrito_2013_cod)
+      # if("ARS"%in%input$other_groups_list){
+      #   extra2 <- unique(filtered$ars_2022_cod)}else{extra2 <- c()        }
+      # if("ACES"%in%input$other_groups_list){
+      #   extra3 <- unique(filtered$aces_2022_cod)}else{extra3 <- c()        }
+      filtered <-
+        geo_lookup |> filter(distrito_2013 %in% extra)
+      # Sets lists of codes for debug panel
+      f_freguesia <- filtered |>
+        pull(dicofre_2013) |>
+        unique()
+      f_municipio_2013 <- filtered |>
+        pull(municipio_2013_cod) |>
+        unique()
+      f_municipio_2002 <- filtered |>
+        pull(municipio_2002_cod) |>
+        unique()
+      
+      return(
+        list(
+          filtered_table = filtered,
+          f_freguesia = f_freguesia,
+          f_municipio_2013 = f_municipio_2013,
+          f_municipio_2002 = f_municipio_2002,
+          extra1=extra1
+          # extra2=extra2,
+          # extra3=extra3
+        )
+      )
+  }else if("ACES"%in%input$other_groups_list){
+    filtered <-
+      geo_lookup |> filter(chosen_group_options$available_items %in% input$chosen_items)
+    extra <- unique(filtered$aces_2022)
+    extra1 <- unique(filtered$aces_2022_cod)
+    # if("ARS"%in%input$other_groups_list){
+    #   extra2 <- unique(filtered$ars_2022_cod)}else{extra2 <- c()        }
+    # if("Distrito"%in%input$other_groups_list){
+    #   extra3 <- unique(filtered$distrito_2013_cod)}else{extra3 <- c()        }
+    filtered <-
+      geo_lookup |> filter(aces_2022 %in% extra)
+    # Sets lists of codes for debug panel
+    f_freguesia <- filtered |>
+      pull(dicofre_2013) |>
+      unique()
+    f_municipio_2013 <- filtered |>
+      pull(municipio_2013_cod) |>
+      unique()
+    f_municipio_2002 <- filtered |>
+      pull(municipio_2002_cod) |>
+      unique()
+    return(
+      list(
+        filtered_table = filtered,
+        f_freguesia = f_freguesia,
+        f_municipio_2013 = f_municipio_2013,
+        f_municipio_2002 = f_municipio_2002,
+        extra1=extra1
+        # extra2=extra2,
+        # extra3=extra3
+      )
+    )
+    
+  }})
   # Create a reactive function to ge the chosen indicator codes
   filtered_indicators <- reactive({
     f_indicators <- indicators |>
@@ -976,13 +1262,17 @@ observe({
       output[[paste0(item, "_table")]] <- renderDT({
         # Get the data from result_list_reactive
         data <- result_list_reactive()[[item]]
-        
+        print(data)
+        print(filtered_area()$extra1)
+        print(filtered_area()$extra2)
+        print(filtered_area()$extra3)
         data <- data %>%
+          # dplyr::filter(geodsg %in% input$chosen_items | geocod %in% filtered_area()$extra1| geocod %in% filtered_area()$extra2| geocod %in% filtered_area()$extra3 )%>%
           mutate(valor = as.numeric(valor))%>%
           mutate(year = str_sub(obs,-4))%>%
           arrange(obs, year)
         # Return a dataTable with the data
-        DT::datatable(data)
+        DT::datatable(data,filter = list(position = 'top', clear = FALSE))
       })
       output[[paste0(item, "_download")]] <- downloadHandler(
         filename = function() {
@@ -1012,6 +1302,7 @@ observe({
         full_name <- indicators$designacao[indicators$codigo_de_difusao == item]
         # This line retrieves the data for the current item from the reactive function and converts it to a dataframe
         data1 <- as.data.frame(result_list_reactive()[[item]]) %>%
+          # dplyr::filter(geodsg %in% input$chosen_items | geocod %in% filtered_area()$extra1|geocod %in% filtered_area()$extra2|geocod %in% filtered_area()$extra3 )%>%
           # This line converts the 'valor' column to numeric and creates a 'year' column based on the last 4 characters of 'obs'
           mutate(valor = as.numeric(valor),
                  year = str_sub(obs, -4)) %>%
@@ -1026,7 +1317,8 @@ observe({
         if(any(str_detect(colnames(data1), "dim"))){
           if(sum(str_detect(colnames(data1), "dim"))== 1){
             data1<- data1%>% 
-              mutate(aggregate = interaction(geodsg, dim_3_t, sep = ", "))%>%
+              mutate(aggregate = interaction(geocod, dim_3_t, sep = ", "))%>%
+              # dplyr::filter(geodsg %in% input$chosen_items | geocod %in% filtered_area()$extra1|geocod %in% filtered_area()$extra2|geocod %in% filtered_area()$extra3 )%>%
               summarise(valor= sum(valor, na.rm = TRUE), .by = c(obs,aggregate,geodsg,dim_3_t,year))%>%
               arrange(obs, year)
             
@@ -1043,7 +1335,7 @@ observe({
               # This line rotates the x-axis labels by 90 degrees
               scale_x_discrete(guide = guide_axis(angle = 90)) +
               # This line adds a legend for the color variable, using the name 'Localização Geográfica'
-              scale_color_hue(name = "Localização Geográfica") +
+              scale_color_hue(name = "Localização Geográfica", labels = data1$geodsg) +
               scale_color_hue(direction=1, aesthetics = "group")+
               # This line sets the chart limits to remove extra white space
               coord_cartesian(expand = FALSE) +
@@ -1070,13 +1362,13 @@ observe({
                 geom_line(data = data1,
                           aes(x = factor(obs, levels = unique(obs), ordered = TRUE),
                               y = valor,
-                              colour = as.factor(geodsg),
+                              colour = as.factor(geocod),
                               group = interaction(geodsg, dim_3_t, dim_4_t, sep = "-")),
                           linewidth = 1.2) +
                 # This line rotates the x-axis labels by 90 degrees
                 scale_x_discrete(guide = guide_axis(angle = 90)) +
                 # This line adds a legend for the color variable, using the name 'Localização Geográfica'
-                scale_color_discrete(name = "Localização Geográfica") +
+                scale_color_discrete(name = "Localização Geográfica", labels = data1$geodsg) +
                 # This line sets the chart limits to remove extra white space
                 coord_cartesian(expand = FALSE) +
                 # This line adds a chart title, subtitle, and caption
@@ -1104,13 +1396,13 @@ observe({
                 geom_line(data = data1,
                           aes(x = factor(obs, levels = unique(obs), ordered = TRUE),
                               y = valor,
-                              colour = as.factor(geodsg),
+                              colour = as.factor(geocod),
                               group = geodsg),
                           linewidth = 1.2) +
                 # This line rotates the x-axis labels by 90 degrees
                 scale_x_discrete(guide = guide_axis(angle = 90)) +
                 # This line adds a legend for the color variable, using the name 'Localização Geográfica'
-                scale_color_discrete(name = "Localização Geográfica") +
+                scale_color_discrete(name = "Localização Geográfica", labels = data1$geodsg) +
                 # This line sets the chart limits to remove extra white space
                 coord_cartesian(expand = FALSE) +
                 # This line adds a chart title, subtitle, and caption
@@ -1132,138 +1424,19 @@ observe({
             
             # This line prints the ggplot object
             print(p)
+            return(p)
       })
       output[[paste0(item, "_plotly")]] <- renderPlotly({
-        # This line retrieves the full name of the item from the 'indicators' dataframe based on its code
-        full_name <- indicators$designacao[indicators$codigo_de_difusao == item]
-        # This line retrieves the data for the current item from the reactive function and converts it to a dataframe
-        data1 <- as.data.frame(result_list_reactive()[[item]]) %>%
-          # This line converts the 'valor' column to numeric and creates a 'year' column based on the last 4 characters of 'obs'
-          mutate(valor = as.numeric(valor),
-                 year = str_sub(obs, -4)) %>%
-          # This line sorts the data by 'obs' and 'year'
-          arrange(obs, year)
-        
-        if(any(str_detect(colnames(data1), "dim"))){
-          data1  <- data1%>%
-            select(ends_with("t")|!starts_with("dim"))
-        }
-        # This line creates a ggplot object with the data1 dataframe as input
-        if(any(str_detect(colnames(data1), "dim"))){
-          if(sum(str_detect(colnames(data1), "dim"))== 1){
-            data1<- data1%>% 
-              mutate(aggregate = interaction(geodsg, dim_3_t, sep = ", "))%>%
-              summarise(valor= sum(valor, na.rm = TRUE), .by = c(obs,aggregate,geodsg,dim_3_t,year))%>%
-              arrange(obs, year)
-            
-            
-            p <- ggplot2::ggplot() +
-              # This line adds a line layer with 'obs' on the x-axis, 'valor' on the y-axis, 'geodsg' as color, and 'geodsg' as the grouping variable
-              geom_line(data = data1,
-                        aes(x = factor(obs, levels = unique(obs), ordered = TRUE),
-                            y = valor,
-                            colour = dim_3_t,
-                            group = aggregate),
-                        linewidth = 1.2) +
-              facet_wrap(~geodsg, scales = "free")+
-              # This line rotates the x-axis labels by 90 degrees
-              scale_x_discrete(guide = guide_axis(angle = 90)) +
-              # This line adds a legend for the color variable, using the name 'Localização Geográfica'
-              scale_color_hue(name = "Localização Geográfica") +
-              scale_color_hue(direction=1, aesthetics = "group")+
-              # This line sets the chart limits to remove extra white space
-              coord_cartesian(expand = FALSE) +
-              # This line adds a chart title, subtitle, and caption
-              labs(x = "Observações",
-                   y = "Valor",
-                   title = full_name,
-                   subtitle = paste0("Últimas ", length(unique(data1$obs)), " Observações"),
-                   caption = "Fonte dos Dados: INE") +
-              # This line sets the chart style to minimal and customizes the font sizes
-              theme_minimal() +
-              theme(plot.title = element_text(size = 14, face = "bold"),
-                    plot.subtitle = element_text(size = 12, face = "bold"),
-                    axis.title.y = element_text(size = 12),
-                    axis.title.x = element_text(size = 12),
-                    axis.text.y = element_text(size = 12),
-                    axis.text.x = element_text(size = 12),
-                    legend.title = element_text(size = 12))
-            
-          }else if(sum(str_detect(colnames(data1), "dim"))== 2){
-            #WORKING ON IT
-            p <- ggplot2::ggplot() +
-              # This line adds a line layer with 'obs' on the x-axis, 'valor' on the y-axis, 'geodsg' as color, and 'geodsg' as the grouping variable
-              geom_line(data = data1,
-                        aes(x = factor(obs, levels = unique(obs), ordered = TRUE),
-                            y = valor,
-                            colour = as.factor(geodsg),
-                            group = interaction(geodsg, dim_3_t, dim_4_t, sep = "-")),
-                        linewidth = 1.2) +
-              # This line rotates the x-axis labels by 90 degrees
-              scale_x_discrete(guide = guide_axis(angle = 90)) +
-              # This line adds a legend for the color variable, using the name 'Localização Geográfica'
-              scale_color_discrete(name = "Localização Geográfica") +
-              # This line sets the chart limits to remove extra white space
-              coord_cartesian(expand = FALSE) +
-              # This line adds a chart title, subtitle, and caption
-              labs(x = "Observações",
-                   y = "Valor",
-                   title = full_name,
-                   subtitle = paste0("Últimas ", length(unique(data1$obs)), " Observações"),
-                   caption = "Fonte dos Dados: INE") +
-              # This line sets the chart style to minimal and customizes the font sizes
-              theme_minimal() +
-              theme(plot.title = element_text(size = 14, face = "bold"),
-                    plot.subtitle = element_text(size = 12, face = "bold"),
-                    axis.title.y = element_text(size = 12),
-                    axis.title.x = element_text(size = 12),
-                    axis.text.y = element_text(size = 12),
-                    axis.text.x = element_text(size = 12),
-                    legend.title = element_text(size = 12))
-            
-          }else{
-            p <- NULL
-          }
-        }else{
-          p <- ggplot2::ggplot() +
-            # This line adds a line layer with 'obs' on the x-axis, 'valor' on the y-axis, 'geodsg' as color, and 'geodsg' as the grouping variable
-            geom_line(data = data1,
-                      aes(x = factor(obs, levels = unique(obs), ordered = TRUE),
-                          y = valor,
-                          colour = as.factor(geodsg),
-                          group = geodsg),
-                      linewidth = 1.2) +
-            # This line rotates the x-axis labels by 90 degrees
-            scale_x_discrete(guide = guide_axis(angle = 90)) +
-            # This line adds a legend for the color variable, using the name 'Localização Geográfica'
-            scale_color_discrete(name = "Localização Geográfica") +
-            # This line sets the chart limits to remove extra white space
-            coord_cartesian(expand = FALSE) +
-            # This line adds a chart title, subtitle, and caption
-            labs(x = "Observações",
-                 y = "Valor",
-                 title = full_name,
-                 subtitle = paste0("Últimas ", length(unique(data1$obs)), " Observações"),
-                 caption = "Fonte dos Dados: INE") +
-            # This line sets the chart style to minimal and customizes the font sizes
-            theme_minimal() +
-            theme(plot.title = element_text(size = 14, face = "bold"),
-                  plot.subtitle = element_text(size = 12, face = "bold"),
-                  axis.title.y = element_text(size = 12),
-                  axis.title.x = element_text(size = 12),
-                  axis.text.y = element_text(size = 12),
-                  axis.text.x = element_text(size = 12),
-                  legend.title = element_text(size = 12))
-        }
-        p <- ggplotly(p)
+        p1 <- ggplotly()
         # This line prints the ggplot object
-        print(p)
+        print(p1)
       })
       output[[paste0(item, "_plot1")]] <- renderPlot({
         # This line retrieves the full name of the item from the 'indicators' dataframe based on its code
         full_name <- indicators$designacao[indicators$codigo_de_difusao == item]
         # This line retrieves the data for the current item from the reactive function and converts it to a dataframe
         data1 <- as.data.frame(result_list_reactive()[[item]]) %>%
+          # dplyr::filter(geodsg %in% input$chosen_items | geocod %in% filtered_area()$extra1| geocod %in% filtered_area()$extra2|geocod %in% filtered_area()$extra3 )%>%
           # This line converts the 'valor' column to numeric and creates a 'year' column based on the last 4 characters of 'obs'
           mutate(valor = as.numeric(valor),
                  year = str_sub(obs, -4)) %>%
@@ -1279,7 +1452,7 @@ observe({
           geom_line(data = data1,
                     aes(x = factor(obs, levels = unique(obs), ordered = TRUE),
                         y = valor,
-                        colour = as.factor(geodsg),
+                        colour = as.factor(geocod),
                         group = geodsg),
                     linewidth = 1.2)
         
@@ -1298,7 +1471,7 @@ observe({
         p <- p +
           scale_x_discrete(guide = guide_axis(angle = 90)) +
           # This line adds a legend for the color variable, using the name 'Localização Geográfica'
-          scale_color_discrete(name = "Localização Geográfica") +
+          scale_color_discrete(name = "Localização Geográfica",labels = data1$geodsg) +
           # This line sets the chart limits to remove extra white space
           coord_cartesian(expand = FALSE) +
           # This line adds a chart title, subtitle, and caption
