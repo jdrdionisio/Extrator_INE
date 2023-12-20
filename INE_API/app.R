@@ -213,7 +213,7 @@ ine.get <- function(indicators,selected_areas,observation_requested, result_list
             "&lang=PT"
           )
         ))
-      }else{
+      }else if(isFALSE(individual)){
         all <- as.data.frame(fromJSON(
           paste0(
             "https://www.ine.pt/ine/json_indicador/pindica.jsp?op=2&varcd=",
@@ -221,6 +221,8 @@ ine.get <- function(indicators,selected_areas,observation_requested, result_list
             "&Dim1=T&lang=PT"
           )
         ))
+      } else{
+        all <- list(Sucesso = data.frame("Falso" =c("Falso")))
       }
       if("Falso" %in% colnames(all[]$Sucesso) ){
         success <- c(10)
