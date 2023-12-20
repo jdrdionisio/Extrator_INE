@@ -3,17 +3,6 @@
 #
 # Find out more about building applications with Shiny here:
 #    http://shiny.rstudio.com/
-#
-# install.packages("shinyWidgets")
-# install.packages("fuzzyjoin")
-# install.packages("DT")
-# install.packages("shinyjs")
-# install.packages('rsconnect')
-# install.packages('stringdist')
-# install.packages("bslib")
-# install.packages("thematic")
-# install.packages("shinycssloaders")
-# install.packages("ggthemes")
 library(shiny)
 library(shinyWidgets)
 library(tidyverse)
@@ -30,8 +19,9 @@ library(ggthemes)
 library(plotly)
 # Load a reference table of geographical aggregations and Portuguese health clusters
 geo_lookup <-
-  read_csv(
-    "datasets/geolinkage_aces_2022.csv",
+  read_delim(
+    "datasets/geo_linkage_2024_v2.csv",
+    delim=";",
     col_types = cols(.default = "c"),
     locale = locale("pt")
   )
@@ -41,15 +31,16 @@ geo_lookup <- geo_lookup |>
 # What data should be bound in the end?
 geo_reference <- list(
   freguesia_2013 = geo_lookup,
-  municipio_2013 = geo_lookup[3:20],
-  municipio_2002 = geo_lookup[3:20],
-  nuts3_2013 = geo_lookup[c(8:20)],
-  nuts3_2002 = geo_lookup[c(8:20)],
-  nuts2_2013 = geo_lookup[c(11:20)],
-  nuts1_2013 = geo_lookup[c(13:20)],
-  pais = geo_lookup[c(15:20)],
-  aces_2022 = geo_lookup[c(3:5, 8:20)],
-  ars_2022 = geo_lookup[c(3:5, 11:20)]
+  municipio_2013 = geo_lookup[3:21],
+  municipio_2002 = geo_lookup[3:21],
+  nuts3_2013 = geo_lookup[c(8:21)],
+  nuts3_2002 = geo_lookup[c(8:21)],
+  nuts2_2013 = geo_lookup[c(11:21)],
+  nuts1_2013 = geo_lookup[c(13:21)],
+  pais = geo_lookup[c(15:21)],
+  aces_2022 = geo_lookup[c(3:5, 8:21)],
+  uls_2023 = geo_lookup[c(3:5, 8:21)],
+  ars_2022 = geo_lookup[c(3:5, 11:21)]
 )
 # Retrieve the available indicators
 indicators <- read_excel("datasets/Indicadores.xlsx",
@@ -122,7 +113,7 @@ ine.meta <- function(indicators, meta_list){
   return(meta_list)
 }
 # Main funtion for INE indicators extraction
-ine.get <- function(indicators,selected_areas,observation_requested, result_list, geo_reference,groups_chosen, groups_other) {
+ine.get <- function(indicators,selected_areas,observation_requested, result_list, geo_reference,groups_chosen, groups_other, individual) {
     # Set the sleep timer to 0
     counter <- 0
     # Save the selected areas' codes into vectors
@@ -214,13 +205,23 @@ ine.get <- function(indicators,selected_areas,observation_requested, result_list
         groups_chosen <- c(groups_chosen, groups_other)
       }
       # attempt to extract everything at once
-      all <- as.data.frame(fromJSON(
-        paste0(
-          "https://www.ine.pt/ine/json_indicador/pindica.jsp?op=2&varcd=",
-          indicators_current,
-          "&lang=PT"
-        )
-      ))
+      if(observation_requested==1 & isFALSE(individual)){
+        all <- as.data.frame(fromJSON(
+          paste0(
+            "https://www.ine.pt/ine/json_indicador/pindica.jsp?op=2&varcd=",
+            indicators_current,
+            "&lang=PT"
+          )
+        ))
+      }else{
+        all <- as.data.frame(fromJSON(
+          paste0(
+            "https://www.ine.pt/ine/json_indicador/pindica.jsp?op=2&varcd=",
+            indicators_current,
+            "&Dim1=T&lang=PT"
+          )
+        ))
+      }
       if("Falso" %in% colnames(all[]$Sucesso) ){
         success <- c(10)
         for (k in 1:length(groups_chosen)) {
@@ -235,6 +236,7 @@ ine.get <- function(indicators,selected_areas,observation_requested, result_list
             groups_chosen[k] == "País" ~ 8,
             groups_chosen[k] == "ACES" ~ 1,
             groups_chosen[k] == "ARS" ~ 2,
+            groups_chosen[k] == "ULS" ~ 2,
             # If all others fail, the default is the parish level
             TRUE ~ 1
           )
@@ -410,6 +412,7 @@ ine.get <- function(indicators,selected_areas,observation_requested, result_list
         
         if((c("Freguesia") %in% groups_chosen|
                    c("ACES") %in% groups_chosen|
+                   c("ULS") %in% groups_chosen|
                    c("ARS") %in% groups_chosen|
                    c("Distrito") %in% groups_chosen
                    ) & (1 %in% success)){
@@ -432,6 +435,7 @@ ine.get <- function(indicators,selected_areas,observation_requested, result_list
         }
         if((c("Município") %in% groups_chosen|
                      c("ACES") %in% groups_chosen|
+                     c("ULS") %in% groups_chosen|
                      c("ARS") %in% groups_chosen|
                      c("Distrito") %in% groups_chosen) & (2 %in% success)|min(success)==2){
           geo_chosen <- geo_reference[[2]]
@@ -475,7 +479,7 @@ ine.get <- function(indicators,selected_areas,observation_requested, result_list
         result_list[[indicators_current]] <- df_all
       }
         # Runs the synthetic groups if requested and possible
-        if (any(c("Distrito", "ACES", "ARS") %in% groups_chosen) & min(success) < 4) {
+        if (any(c("Distrito", "ACES", "ARS", "ULS") %in% groups_chosen) & min(success) < 4) {
           if (1 %in% success) {
             level_names_success <- level_names_reference[1]
           } else if (2 %in% success) {
@@ -634,6 +638,84 @@ ine.get <- function(indicators,selected_areas,observation_requested, result_list
                 ) |>
                 dplyr::select(geocod, geodsg, valor, obs) |>
                 unique())}
+          }else if ("ULS" %in% groups_chosen) {
+            if(any(str_detect(colnames(result_list[[indicators_current]]), "dim"))){
+              if(sum(str_detect(colnames(result_list[[indicators_current]]), "dim"))== 2){
+                result_list[[indicators_current]] <- bind_rows(
+                  result_list[[indicators_current]],
+                  result_list[[indicators_current]] |>
+                    # Adds the geographical information
+                    left_join(geo_chosen,
+                              by = c("geocod" = as.character(level_names_success)),
+                              multiple = "first"
+                    ) |>
+                    # Groups the results
+                    summarise(
+                      geocod = "NA",
+                      geodsg = uls_2023,
+                      valor = sum(valor, na.rm = TRUE),
+                      # obs = obs,
+                      .by = c(obs, uls_2023, dim_3, dim_3_t)
+                    ) |>
+                    select(geocod, geodsg, dim_3, dim_3_t, valor, obs) |>
+                    unique()
+                )}else if(sum(str_detect(colnames(result_list[[indicators_current]]), "dim"))== 4){
+                  result_list[[indicators_current]] <- bind_rows(
+                    result_list[[indicators_current]],
+                    result_list[[indicators_current]] |>
+                      # Adds the geographical information
+                      left_join(geo_chosen,
+                                by = c("geocod" = as.character(level_names_success)),
+                                multiple = "first"
+                      ) |>
+                      # Groups the results
+                      summarise(
+                        geocod = "NA",
+                        geodsg = uls_2023,
+                        valor = sum(valor, na.rm = TRUE),
+                        # obs = obs,
+                        .by = c(obs, uls_2023, dim_3, dim_3_t, dim_4, dim_4_t)
+                      ) |>
+                      select(geocod, geodsg,dim_3, dim_3_t, dim_4, dim_4_t, valor, obs) |>
+                      unique())}
+              else if(sum(str_detect(colnames(result_list[[indicators_current]]), "dim"))== 6){
+                result_list[[indicators_current]] <- bind_rows(
+                  result_list[[indicators_current]],
+                  result_list[[indicators_current]] |>
+                    # Adds the geographical information
+                    left_join(geo_chosen,
+                              by = c("geocod" = as.character(level_names_success)),
+                              multiple = "first"
+                    ) |>
+                    # Groups the results
+                    summarise(
+                      geocod = "NA",
+                      geodsg = uls_2023,
+                      valor = sum(valor, na.rm = TRUE),
+                      # obs = obs,
+                      # .by = c(obs, aces_2022)
+                      .by = c(obs, uls_2023, dim_3, dim_3_t, dim_4, dim_4_t, dim_5, dim_5_t)
+                    ) |>
+                    select(geocod, geodsg,dim_3, dim_3_t, dim_4, dim_4_t, dim_5, dim_5_t, valor, obs) |>
+                    unique())}
+            }else{ result_list[[indicators_current]] <- bind_rows(
+              result_list[[indicators_current]],
+              result_list[[indicators_current]] |>
+                # Adds the geographical information
+                left_join(geo_chosen,
+                          by = c("geocod" = as.character(level_names_success)),
+                          multiple = "first"
+                ) |>
+                # Groups the results
+                summarise(
+                  geocod = "NA",
+                  geodsg = uls_2023,
+                  valor = sum(valor, na.rm = TRUE),
+                  # obs = obs,
+                  .by = c(obs, uls_2023)
+                ) |>
+                dplyr::select(geocod, geodsg, valor, obs) |>
+                unique())}
           } else if ("ARS" %in% groups_chosen) {
             if(any(str_detect(colnames(result_list[[indicators_current]]), "dim"))){
               if(sum(str_detect(colnames(result_list[[indicators_current]]), "dim"))== 2){
@@ -746,8 +828,8 @@ ui <- fluidPage(
   ),
   navbarPage(
   theme = bs_theme(base_font = font_google("Lato"),
-  font_scale = -0.5, `enable-gradients` = TRUE, `enable-shadows` = TRUE
-  ,spacer = "0.5rem", bootswatch = "minty"),
+  font_scale = -0.8, `enable-gradients` = TRUE, `enable-shadows` = TRUE
+  ,spacer = "0.3rem", bootswatch = "minty"),
   # theme = bs_theme(), 
   # Change theme at will must activate bs_themer() in server
   "Extrator INE v0.4",
@@ -784,16 +866,18 @@ ui <- fluidPage(
           min = 1,
           max = 20,
           value = 1
-        ),
-        p("Se o número de observações pedidas não estiver disponível, será extraído o máximo possível."),
+        ) |> tooltip("Se não houver dados do número pedido, é extraído o máximo."),
+        # p("Se não houver dados do número pedido, é extraído o máximo."),
+        actionButton("go", "Submeter", class = "btn-primary"),
+        actionButton("stop", "Reiniciar", class = "btn-primary"),
         # Search bar for indicator
         selectizeInput(
           "indicators_search",
-          "Selecionar ou Pesquisar indicadores:",
+          "Selecionar indicadores:",
           choices = NULL,
           multiple = TRUE
-        ),
-        p("Lista de indicadores atualizada a 2023-03-06"),
+        ) |> tooltip("Indicadores atualizados em 2023-03-06"),
+        # p("Indicadores atualizados em 2023-03-06"),
         # Search bar for desagregação
         selectInput(
           "chosen_group_dropdown",
@@ -807,15 +891,22 @@ ui <- fluidPage(
             "NUTS I",
             "País",
             "ACES",
+            "ULS",
             "ARS"
           )
+        ) |> tooltip(
+          "Se não houver dados do pedido, será extraído o mais próximo possível."
         ),
-        p(
-          "Se o nível pedido não estiver disponível, será extraído o mais próximo possível."
-        ),
+        # p(
+        #   "Se não houver dados do pedido, será extraído o mais próximo possível."
+        # ),
         checkboxInput("select_all_checkbox", "Selecionar todos", FALSE),
         # Dropdown for additional desagregação options
         uiOutput("chosen_items_search"),
+        checkboxInput("individual_checkbox",
+                      "Extração individual",
+                      FALSE)|> tooltip("Aumenta tempo de extração mas útil em indicadores com múltiplas dimensões com extração completa que não inclua níveis mais pequenos."),
+        # p("Aumenta tempo de extração mas útil em indicadores com múltiplas dimensões com extração completa que não inclua níveis mais pequenos."),
         checkboxInput(
           "other_groups_checkbox",
           "Agrupar resultados por outros níveis",
@@ -828,10 +919,6 @@ ui <- fluidPage(
         checkboxInput("meta_checkbox",
                       "Pedir Metainformação",
                       FALSE),
-        actionButton("go", "Submeter", class = "btn-primary"),
-        actionButton("stop", "Reiniciar", class = "btn-primary"),
-        br(),
-        br(),
         checkboxInput(
           "show_debug",
           "Painel debug",
@@ -879,7 +966,7 @@ ui <- fluidPage(
       ),
       mainPanel(
         h3("Próximas melhorias"),
-        p("- Corrigir o cálculo dos indicadores para distrito, ACES, ARS quando não são contagens;"),
+        p("- Corrigir o cálculo dos indicadores para distrito, ACES, ULS ARS quando não são contagens;"),
         p("- Remoção das variáveis para cálculo de dimensões não administrativas do INE (Distrito, ACES e ARS) - Para já deixo como validação"),
         p("- Automatizar a procura dos indicadores disponíveis;"),
         p("- Melhoria na manipulação de variáveis e visualizações;"),
@@ -889,6 +976,8 @@ ui <- fluidPage(
         h3("V0.4"),
         h4("2023-12-08"),
         p("- Otimização de indicadores pequenos para extração completa;"),
+        p("- Dada opção para extração por ULS"),
+        p("- Dada opção para extração individual"),
         p("- Dada opção para criação de gráficos"),
         h3("V0.3.6"),
         h4("2023-05-17"),
@@ -1035,6 +1124,8 @@ server <- function(input, output, session) {
       chosen_group_options$available_items <- geo_lookup$pais
     } else if (input$chosen_group_dropdown == "ACES") {
       chosen_group_options$available_items <- geo_lookup$aces_2022
+    }else if (input$chosen_group_dropdown == "ULS") {
+      chosen_group_options$available_items <- geo_lookup$uls_2023
     } else if (input$chosen_group_dropdown == "ARS") {
       chosen_group_options$available_items <- geo_lookup$ars_2022
     }
@@ -1146,7 +1237,8 @@ server <- function(input, output, session) {
           "NUTS II",
           "NUTS I",
           "País",
-          "ACES"
+          "ACES",
+          "ULS"
         )
     } else if (input$chosen_group_dropdown == "Município") {
       other_groups <-
@@ -1158,6 +1250,7 @@ server <- function(input, output, session) {
           "NUTS I",
           "País",
           "ACES",
+          "ULS",
           "ARS"
         )
     } else if (input$chosen_group_dropdown == "Distrito") {
@@ -1233,7 +1326,8 @@ server <- function(input, output, session) {
           "NUTS II",
           "NUTS I",
           "País",
-          "ACES"
+          "ACES",
+          "ULS"
         )
     }
     return(other_groups)
@@ -1255,7 +1349,7 @@ server <- function(input, output, session) {
   })
   # Create a reactive function for the focused area codes
   filtered_area <- reactive({
-    if(is.null(input$other_groups_list)|(!("Distrito"%in%input$other_groups_list)&!("ACES"%in%input$other_groups_list)&!("ARS"%in%input$other_groups_list))){
+    if(is.null(input$other_groups_list)|(!("Distrito"%in%input$other_groups_list)&!("ACES"%in%input$other_groups_list)&!("ARS"%in%input$other_groups_list)&!("ULS"%in%input$other_groups_list))){
     filtered <-
       geo_lookup |> filter(chosen_group_options$available_items %in% input$chosen_items)
     # Sets lists of codes for debug panel
@@ -1378,6 +1472,39 @@ server <- function(input, output, session) {
       )
     )
     
+  }else if("ULS"%in%input$other_groups_list){
+    filtered <-
+      geo_lookup |> filter(chosen_group_options$available_items %in% input$chosen_items)
+    extra <- unique(filtered$uls_2023)
+    # extra1 <- unique(filtered$aces_2022_cod)
+    # if("ARS"%in%input$other_groups_list){
+    #   extra2 <- unique(filtered$ars_2022_cod)}else{extra2 <- c()        }
+    # if("Distrito"%in%input$other_groups_list){
+    #   extra3 <- unique(filtered$distrito_2013_cod)}else{extra3 <- c()        }
+    filtered <-
+      geo_lookup |> filter(uls_2023 %in% extra)
+    # Sets lists of codes for debug panel
+    f_freguesia <- filtered |>
+      pull(dicofre_2013) |>
+      unique()
+    f_municipio_2013 <- filtered |>
+      pull(municipio_2013_cod) |>
+      unique()
+    f_municipio_2002 <- filtered |>
+      pull(municipio_2002_cod) |>
+      unique()
+    return(
+      list(
+        filtered_table = filtered,
+        f_freguesia = f_freguesia,
+        f_municipio_2013 = f_municipio_2013,
+        f_municipio_2002 = f_municipio_2002,
+        extra1="NA"
+        # extra2=extra2,
+        # extra3=extra3
+      )
+    )
+    
   }})
   # Create a reactive function to ge the chosen indicator codes
   filtered_indicators <- reactive({
@@ -1437,7 +1564,8 @@ observeEvent(input$go,{
         result_list_updated <- ine.get(indicators = filtered_indicators(),selected_areas = filtered_area()$filtered_table, observation_requested = input$observation_slider,result_list = result_list,
                                        geo_reference = geo_reference,
                                        groups_chosen = input$chosen_group_dropdown,
-                                       groups_other = input$other_groups_list
+                                       groups_other = input$other_groups_list,
+                                       individual = input$individual_checkbox
         )
         result_list_reactive(result_list_updated)
         dimmension_chosen(c(input$other_groups_list, input$chosen_group_dropdown))
