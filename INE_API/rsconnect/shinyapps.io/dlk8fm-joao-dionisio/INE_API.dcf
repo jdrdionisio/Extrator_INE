@@ -5,9 +5,7 @@ account: dlk8fm-joao-dionisio
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 8487356
-bundleId: 8070297
+bundleId: 8421767
 url: https://dlk8fm-joao-dionisio.shinyapps.io/INE_API/
-when: 1703098203.37171
-lastSyncTime: 1703098203.37173
 asMultiple: FALSE
 asStatic: FALSE

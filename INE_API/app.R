@@ -932,7 +932,7 @@ ui <- fluidPage(
         uiOutput("debug_panel_checkbox"),
         h2("Dados Recolhidos pelo Extractor"),
         uiOutput("error"),
-        withSpinner(uiOutput("results_table"),type = 5, color = "#78C2AD")
+        withSpinner(uiOutput("results_table"),type = 5, color = "#78C2AD", hide.ui = T)
       ,width = 9)
     )
   ),
@@ -1545,6 +1545,36 @@ server <- function(input, output, session) {
   #
   dimmension_chosen <- reactiveVal()
 
+result_list_processed <- eventReactive(input$go, {
+    if (length(filtered_indicators()) != 0 & nrow(filtered_area()$filtered_table) != 0) {
+      # Replace this with your actual data fetching function
+      result_list_updated <- ine.get(indicators = filtered_indicators(),selected_areas = filtered_area()$filtered_table, observation_requested = input$observation_slider,result_list = result_list,
+                                     geo_reference = geo_reference,
+                                     groups_chosen = input$chosen_group_dropdown,
+                                     groups_other = input$other_groups_list,
+                                     individual = input$individual_checkbox
+      )
+      result_list_reactive(result_list_updated)
+      dimmension_chosen(c(input$other_groups_list, input$chosen_group_dropdown))
+    } else {
+      # Enable inputs
+      NULL
+    } 
+  })
+  
+meta_list_processed <- eventReactive(input$go, {
+    if(input$meta_checkbox) {
+      # Replace this with your actual metadata fetching function
+        meta_list_updated <- ine.meta(
+          indicators = filtered_indicators(),
+          meta_list = meta_list
+        )
+        meta_list_reactive(meta_list_updated)
+    } else {
+      NULL
+    }
+  }, ignoreNULL = TRUE)
+  
   output$results_table <- NULL
   #
 observeEvent(input$stop,{
@@ -1552,95 +1582,76 @@ observeEvent(input$stop,{
 }, ignoreNULL = TRUE)
 
 observeEvent(input$go,{
-    # Disable inputs
-    shinyjs::disable(selector = "input")
-    shinyjs::disable(selector = "select")
-    shinyjs::disable(selector = "button")
-    result_list <- result_list
-    meta_list <- meta_list
-    # Extract data from INE using the inputs from the UI
-    if (length(filtered_indicators()) != 0 &
-      nrow(filtered_area()$filtered_table) != 0) {
-      # Render the tabs based on the reactive value
-      output$results_table <- renderUI({
-        result_list_updated <- ine.get(indicators = filtered_indicators(),selected_areas = filtered_area()$filtered_table, observation_requested = input$observation_slider,result_list = result_list,
-                                       geo_reference = geo_reference,
-                                       groups_chosen = input$chosen_group_dropdown,
-                                       groups_other = input$other_groups_list,
-                                       individual = input$individual_checkbox
-        )
-        result_list_reactive(result_list_updated)
-        dimmension_chosen(c(input$other_groups_list, input$chosen_group_dropdown))
-
-        output$error <- NULL
-        # Get the items from result_list_reactive
-        items <- names(result_list_reactive())
-        # Create a list of tabPanels with dataTables and downloadButtons
-        tabs <- lapply(items, function(item) {
-          full_name <- indicators$designacao[indicators$codigo_de_difusao == item]
-          title <-
-            substr(indicators$designacao[indicators$codigo_de_difusao == item], 1, 20)
-          if (length(full_name) == 0) {
-            full_name <- item
-          } else {
-            full_name <- full_name[1]
-          }
-          tabPanel(
-            title,
-            # set tooltip with full name
-            h4(strong(full_name)),
-            DTOutput(paste0(item, "_table")),
-            downloadButton(paste0(item, "_download"), paste0(item, ".csv")),
-            if(input$graficos_checkbox == TRUE){
-              plotOutput(paste0(item,"_plot"))
-              plotlyOutput(paste0(item,"_plotly"))
-              plotOutput(paste0(item,"_plot1"),height = "1200px", width ="auto")
-            },
-            if(input$meta_checkbox == TRUE){
-              downloadButton(paste0(item,"meta", "_download"), paste0(item,"meta",".csv"))
-            }
-          )
-        })
-        # Return a tabsetPanel with the tabs
-        do.call(tabsetPanel, tabs)
-      })
-    } else if (length(filtered_indicators()) == 0) {
-      output$error <- renderUI({
-        tagList(
-          br(),
-          h1(strong("Não foi pedido nenhum indicador")),
-          br()
-        )
-      }
+  output$error <- renderUI({
+    if (length(filtered_indicators()) != 0 & nrow(filtered_area()$filtered_table) != 0) {
+    # Replace this with your actual data fetching function
+         NULL
+  } else if (length(filtered_indicators()) == 0) {
+      tagList(
+        br(),
+        h1(strong("Não foi pedido nenhum indicador")),
+        br()
       )
-      # Enable inputs
-      shinyjs::enable(selector = "input")
-      shinyjs::enable(selector = "select")
-      shinyjs::enable(selector = "button")
+    } else {
+      tagList(
+        br(),
+        h1(strong(
+          "Não foi pedida nenhuma desagregação"
+        )),
+        br()
+      )
+ }
+  shinyjs::enable(selector = "input")
+  shinyjs::enable(selector = "select")
+  shinyjs::enable(selector = "button")
+}) 
+}) 
+# 
+#     # Disable inputs
+#     shinyjs::disable(selector = "input")
+#     shinyjs::disable(selector = "select")
+#     shinyjs::disable(selector = "button")
+#     result_list <- result_list
+#     meta_list <- meta_list
+#     # Extract data from INE using the inputs from the UI
+#     if (length(filtered_indicators()) != 0 &
+#       nrow(filtered_area()$filtered_table) != 0) {
+output$results_table <- renderUI({
+    req(result_list_processed())
+    # Get the items from result_list_reactive
+    items <- names(result_list_reactive())
+    # Create a list of tabPanels with dataTables and downloadButtons
+    tabs <- lapply(items, function(item) {
+      full_name <- indicators$designacao[indicators$codigo_de_difusao == item]
+      title <-
+        substr(indicators$designacao[indicators$codigo_de_difusao == item], 1, 20)
+      if (length(full_name) == 0) {
+        full_name <- item
       } else {
-      output$error <- renderUI({
-        tagList(
-          br(),
-          h1(strong(
-            "Não foi pedida nenhuma desagregação"
-          )),
-          br()
-        )
+        full_name <- full_name[1]
       }
+      tabPanel(
+        title,
+        # set tooltip with full name
+        h4(strong(full_name)),
+        DTOutput(paste0(item, "_table")),
+        downloadButton(paste0(item, "_download"), paste0(item, ".csv")),
+        if(input$graficos_checkbox == TRUE){
+          plotOutput(paste0(item,"_plot"))
+          plotlyOutput(paste0(item,"_plotly"))
+          plotOutput(paste0(item,"_plot1"),height = "1200px", width ="auto")
+        },
+        if(input$meta_checkbox == TRUE){
+          req(meta_list_processed ())
+          downloadButton(paste0(item,"meta", "_download"), paste0(item,"meta",".csv"))
+        }
       )
-      # Enable inputs
-      shinyjs::enable(selector = "input")
-      shinyjs::enable(selector = "select")
-      shinyjs::enable(selector = "button")
-    }
-    if(input$meta_checkbox == TRUE){
-      meta_list_updated <- ine.meta(
-        indicators = filtered_indicators(),
-        meta_list = meta_list
-      )
-      meta_list_reactive(meta_list_updated)
-    }
-  }, ignoreNULL = TRUE)
+    })
+    # Return a tabsetPanel with the tabs
+    do.call(tabsetPanel, tabs)
+  })
+
+
 # 
   # Render dataTables and download handlers and simple plot when result_list_reactive changes
 observe({
