@@ -975,6 +975,10 @@ ui <- fluidPage(
         p("- Indicadores base em datasets base para evitar extração INE constante."),
         br(),
         h2("Changelog"),
+        h3("V0.42"),
+        h4("2024-03-27"),
+        p("- Otimização de pesquisa de indicadores contínua;"),
+        p("- Ponderada remoção do botão de reiniciar - manter para já"),
         h3("V0.4"),
         h4("2023-12-08"),
         p("- Otimização de indicadores pequenos para extração completa;"),
@@ -1020,8 +1024,8 @@ ui <- fluidPage(
         h4("Em 2023-03-17"),
         p("- Problema na escolha de várias agregações superiores e inferiores que não permite filtro só do que foi pedido;"),
         # p("- Botão de submissão apenas respeitado na primeira submissão. O programa não respeita o botão após, necessidade de criar botão reiniciar;"),
-        p("- Extrações de todas as freguesias do país em múltiplos indicadores leva a quebra do sistema."),
-        p("- Extrações do indicador do país num indicador que não o tem leva a quebra do sistema.- Resolvido")
+        p("- Extrações de todas as freguesias do país em múltiplos indicadores leva a quebra do sistema.")
+        #p("- Extrações do indicador do país num indicador que não o tem leva a quebra do sistema.- Resolvido")
       )
     )
   )
@@ -1545,7 +1549,8 @@ server <- function(input, output, session) {
   #
   dimmension_chosen <- reactiveVal()
 
-result_list_processed <- eventReactive(input$go, {
+  result_list_processed <- eventReactive(input$go, {
+        result_list <- result_list
     if (length(filtered_indicators()) != 0 & nrow(filtered_area()$filtered_table) != 0) {
       # Replace this with your actual data fetching function
       result_list_updated <- ine.get(indicators = filtered_indicators(),selected_areas = filtered_area()$filtered_table, observation_requested = input$observation_slider,result_list = result_list,
@@ -1554,7 +1559,7 @@ result_list_processed <- eventReactive(input$go, {
                                      groups_other = input$other_groups_list,
                                      individual = input$individual_checkbox
       )
-      result_list_reactive(result_list_updated)
+      return(result_list_reactive(result_list_updated))
       dimmension_chosen(c(input$other_groups_list, input$chosen_group_dropdown))
     } else {
       # Enable inputs
@@ -1563,13 +1568,14 @@ result_list_processed <- eventReactive(input$go, {
   })
   
 meta_list_processed <- eventReactive(input$go, {
+     meta_list <- meta_list
     if(input$meta_checkbox) {
       # Replace this with your actual metadata fetching function
         meta_list_updated <- ine.meta(
           indicators = filtered_indicators(),
           meta_list = meta_list
         )
-        meta_list_reactive(meta_list_updated)
+        return(meta_list_reactive(meta_list_updated))
     } else {
       NULL
     }
@@ -1583,10 +1589,7 @@ observeEvent(input$stop,{
 
 observeEvent(input$go,{
   output$error <- renderUI({
-    if (length(filtered_indicators()) != 0 & nrow(filtered_area()$filtered_table) != 0) {
-    # Replace this with your actual data fetching function
-         NULL
-  } else if (length(filtered_indicators()) == 0) {
+   if (length(filtered_indicators()) == 0) {
       tagList(
         br(),
         h1(strong("Não foi pedido nenhum indicador")),
@@ -1611,12 +1614,12 @@ observeEvent(input$go,{
 #     shinyjs::disable(selector = "input")
 #     shinyjs::disable(selector = "select")
 #     shinyjs::disable(selector = "button")
-#     result_list <- result_list
-#     meta_list <- meta_list
+#     
 #     # Extract data from INE using the inputs from the UI
 #     if (length(filtered_indicators()) != 0 &
 #       nrow(filtered_area()$filtered_table) != 0) {
-output$results_table <- renderUI({
+observeEvent(input$go,{
+  output$results_table <- renderUI({
     req(result_list_processed())
     # Get the items from result_list_reactive
     items <- names(result_list_reactive())
@@ -1650,7 +1653,7 @@ output$results_table <- renderUI({
     # Return a tabsetPanel with the tabs
     do.call(tabsetPanel, tabs)
   })
-
+})
 
 # 
   # Render dataTables and download handlers and simple plot when result_list_reactive changes
