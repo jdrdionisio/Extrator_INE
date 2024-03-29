@@ -62,9 +62,122 @@ Indicadores <- read_excel("INE_API/datasets/Indicadores.xlsx", skip = 14)
 
 Indicadores <- Indicadores %>%
   filter(`Disponível no Portal`== "Sim")
+, ordered= TRUE
+
+graph_test <- X0008639 %>%
+  # filter(aces2=="ACeS Baixo Mondego")%>%
+  mutate(valor = as.numeric(valor))%>%
+  mutate(year = str_sub(obs,-4))%>%
+  arrange(obs, year)
+
+if(any(str_detect(colnames(graph_test), "dim"))){
+          graph_test <- graph_test%>%
+            select(ends_with("t")|!starts_with("dim"))
+}
+
+graph_test 
+
+graph_test <- graph_test%>% 
+ mutate(test = interaction(dim_4_t, dim_3_t, sep = ", "))%>%
+ summarise(valor= sum(valor, na.rm = TRUE), .by = c(obs,test,geodsg, year))
+ 
+graph_test
+
+Ideia 1 
+
+ggplot2::ggplot() +
+                # This line adds a line layer with 'obs' on the x-axis, 'valor' on the y-axis, 'geodsg' as color, and 'geodsg' as the grouping variable
+                geom_line(data = graph_test,
+                          aes(x = factor(obs, levels = unique(obs), ordered = TRUE),
+                              y = valor,
+                              colour = test)
+                              ,linewidth = 1.2) +
+                facet_wrap(~geodsg, scales = "free")+
+                # This line rotates the x-axis labels by 90 degrees
+                scale_x_discrete(guide = guide_axis(angle = 90)) +
+                # This line adds a legend for the color variable, using the name 'Localização Geográfica'
+                scale_color_discrete(name = "Localização Geográfica e 3ª dimensão")+
+                coord_cartesian(expand = FALSE)+
+                labs(
+                  x = "Observações",
+                  y = "Valor",
+                  title = "Teste",
+                  caption = "Fonte dos Dados:INE",
+                  # color = "Localização Geográfica"
+                ) +
+                theme_minimal()
+
+2 ideia
+
+ data1<- data1%>% 
+              mutate(aggregate = interaction(geodsg, dim_3_t, sep = ", "))%>%
+              summarise(valor= sum(valor, na.rm = TRUE), .by = c(obs,aggregate,geodsg,dim_3_t,year))%>%
+              arrange(obs, year)
+            
+            
+            p <- ggplot2::ggplot() +
+              # This line adds a line layer with 'obs' on the x-axis, 'valor' on the y-axis, 'geodsg' as color, and 'geodsg' as the grouping variable
+              geom_line(data = data1,
+                        aes(x = factor(obs, levels = unique(obs), ordered = TRUE),
+                            y = valor,
+                            colour = dim_3_t,
+                            group = aggregate),
+                        linewidth = 1.2) +
+              facet_wrap(~geodsg, scales = "free")+
+              # This line rotates the x-axis labels by 90 degrees
+              scale_x_discrete(guide = guide_axis(angle = 90)) +
+              # This line adds a legend for the color variable, using the name 'Localização Geográfica'
+              scale_color_hue(name = "Localização Geográfica") +
+              scale_color_hue(direction=1, aesthetics = "group")+
+              # This line sets the chart limits to remove extra white space
+              coord_cartesian(expand = FALSE) +
+              # This line adds a chart title, subtitle, and caption
+              labs(x = "Observações",
+                   y = "Valor",
+                   title = full_name,
+                   subtitle = paste0("Últimas ", length(unique(data1$obs)), " Observações"),
+                   caption = "Fonte dos Dados: INE") +
+              # This line sets the chart style to minimal and customizes the font sizes
+              theme_minimal() +
+              theme(plot.title = element_text(size = 14, face = "bold"),
+                    plot.subtitle = element_text(size = 12, face = "bold"),
+                    axis.title.y = element_text(size = 12),
+                    axis.title.x = element_text(size = 12),
+                    axis.text.y = element_text(size = 12),
+                    axis.text.x = element_text(size = 12),
+                    legend.title = element_text(size = 12))
+
+# ggplot() +
+#   geom_line(data = graph_test, aes(x = factor(year, levels=unique(year),ordered= TRUE),y = as.numeric(valor), colour = geodsg test), linewidth = 1.2) +
+#   scale_x_discrete(guide = guide_axis(angle = 90))+
+#   # scale_color_discrete(name = "Localização Geográfica") +
+#   scale_color_hue(direction=1, aesthetics = "colour")+
+
+
+# length(unique(graph_test$year))
 ```
 
 Exemplo Simples de como funciona a app
+
+```{r, eval=FALSE}
+```
+
+
+```{r, eval=FALSE}
+```
+
+
+```{r, eval=FALSE}
+```
+
+
+```{r, eval=FALSE}
+```
+
+
+```{r, eval=FALSE}
+```
+
 
 ```{r, eval=FALSE}
 #| code-fold: true
@@ -81,13 +194,44 @@ sleep <- function(z) {
   }
   return(z)
 }
+df3 <- list()
+df3[[1]] <- data.frame()
+if(!"valor" %in% colnames(df3[[1]])){
+       df3[[1]] <- data.frame(geocod=0, geodsg=0, valor=0,obs=0, year=0)
+      }
+df3 <- data.frame(geocod=0, geodsg=0, valor=0,obs=0, year=0)
 
-# results_raw <- fromJSON(
-#       paste0(
-#         "https://www.ine.pt/ine/json_indicador/pindicaMeta.jsp?varcd=",
-#         "0008614",
-#         "&lang=PT"
-#       ))
+results_raw <-
+              fromJSON(
+                paste0(
+                  "https://www.ine.pt/ine/json_indicador/pindica.jsp?op=2&varcd=",
+                  "0008460",
+                  "&Dim1=T",
+                  "&Dim2=",
+                  "PT",
+                  "&lang=PT"
+                )
+              )
+
+results_raw1 <-
+              fromJSON(
+                paste0(
+                  "https://www.ine.pt/ine/json_indicador/pindica.jsp?op=2&varcd=",
+                  "0008460",
+                  "&Dim1=T",
+                  "",
+                  "",
+                  "&lang=PT"
+                )
+              )
+
+results_raw <- fromJSON(
+      paste0(
+        "https://www.ine.pt/ine/json_indicador/pindicaMeta.jsp?varcd=",
+        "0008614",
+        "&lang=PT"
+      ))
+
 names(model_arima)
 ine.meta(indicators, meta_list)
 
@@ -125,7 +269,9 @@ a <- fromJSON(
       paste0(
         "https://www.ine.pt/ine/json_indicador/pindicaMeta.jsp?varcd=0005611",
         "&lang=PT"
-      ))%>%
+      ))
+
+%>%
   select(!c(Dimensoes,Sucesso))
          
 colnames(a)
@@ -297,24 +443,42 @@ População por municipio à data do CENSUS 2021
 ```{r, eval=FALSE}
 #| code-fold: true
 #| code-summary: "Mostrar Código"
-# codigos_df <- read_excel("datasets/ref_geo.xlsx")
+library(rio)
+codigos_df <- import("datasets/geo_linkage_2024_v2.csv", colClasses=c("character"))
 # 
 # 
-numbers <- codigos_df$last4
+numbers <- as.character(codigos_df$dicofre_2013)
+
+numbers_done <- unique(d3$geocod)
+teste <- setdiff(numbers, numbers_done)
+numbers <- teste
+
+df3 <- data.frame()
+
+if(!"valor" %in% colnames(df3 )){
+        df3 <- data.frame(geocod=0, geodsg=0, valor=0,obs=0, year=0)
+      }
+
 
 l <- length(numbers)
 for(i in 1:l ){
     result<- fromJSON(paste0("https://www.ine.pt/ine/json_indicador/pindica.jsp?op=2&varcd=0011626&Dim1=T&Dim2=",numbers[i],"&lang=PT"))
     pop <- as.data.frame(result$Dados$'2021')
    if (i %% 99 == 0) {
-      Sys.sleep(15)
+      Sys.sleep(2)
    }
   if(i==1){
   d2 <- pop
   }else{
     d2 <- rbind(d2,pop)
   }
+  print(l)
 }
+
+d2_2 <- d2 |>
+  distinct()
+
+d3 <- rbind(d2_1,d2_2)
 
 d2 <- d2 %>%
   mutate(municip = case_when(
@@ -323,7 +487,7 @@ d2 <- d2 %>%
       geocod=="1114201" ~ "Lagoa [R.A. Açores]",
       TRUE ~ as.character(geodsg)))
 
-fwrite(d2,file = paste0("datasets/pop_base_2021.csv"), bom = T)
+fwrite(d3,file = paste0("datasets/pop_2021_freg.csv"), bom = T)
 
 ```
 
@@ -1374,3 +1538,1193 @@ largest_area <- geolinkage_aces %>%
 
 result_list <- ine.get(indicador,largest,obs_back,result_list)
 ```
+# New test
+```{r}
+geo_lookup <-
+  read_csv(
+    "datasets/geolinkage_aces_2022.csv",
+    col_types = cols(.default = "c"),
+    locale = locale("pt")
+  )
+# Remove `unknown` and `abroad` from the reference table
+geo_lookup <- geo_lookup |>
+  filter(!dicofre_2013 %in% c("0", "999999"))
+# What data should be bound in the end?
+geo_reference <- list(
+  freguesia_2013 = geo_lookup,
+  municipio_2013 = geo_lookup[3:20],
+  municipio_2002 = geo_lookup[3:20],
+  nuts3_2013 = geo_lookup[c(8:20)],
+  nuts3_2002 = geo_lookup[c(8:20)],
+  nuts2_2013 = geo_lookup[c(11:20)],
+  nuts1_2013 = geo_lookup[c(13:20)],
+  pais = geo_lookup[c(15:20)],
+  total = geo_lookup,
+  aces_2022 = geo_lookup[c(3:5, 8:20)],
+  ars_2022 = geo_lookup[c(3:5, 11:20)]
+)
+# Retrieve the available indicators
+indicators <- read_excel("datasets/Indicadores.xlsx",
+  # col_types = cols(.default = "c"),
+  skip = 14
+) |>
+  clean_names() |>
+  filter(disponivel_no_portal == "Sim") |>
+  distinct(designacao, .keep_all = TRUE)
+# Prepare an empty list for the results
+result_list <- list()
+meta_list <- list()
+# Sleep function to prevent server lockout, rests for 5 seconds every 100 requests
+sleep <- function(z) {
+  if (z %% 100 == 0) {
+    Sys.sleep(5)
+    z <- 1
+  } else {
+    z <- z + 1
+  }
+  return(z)
+}
+
+
+ine.get <- function(indicators,selected_areas,observation_requested, result_list, geo_reference,groups_chosen, groups_other) {
+    # Set the sleep timer to 0
+    counter <- 0
+    # Save the selected areas' codes into vectors
+    dicofre_2013 <- unique(selected_areas$dicofre_2013)
+    municipio_2013 <- unique(selected_areas$municipio_2013_cod)
+    municipio_2002 <- unique(selected_areas$municipio_2002_cod)
+    nuts_3_2013 <- unique(selected_areas$nuts3_2013_cod)
+    nuts_3_2002 <- unique(selected_areas$nuts3_2002_cod)
+    nuts_2_2013 <- unique(selected_areas$nuts2_2013_cod)
+    nuts_1_2013 <- unique(selected_areas$nuts1_2013_cod)
+    pais <- unique(selected_areas$pais_cod)
+    # Joins the code vectors in a list
+    codes_reference <- list(
+      dicofre_2013,
+      municipio_2013,
+      municipio_2002,
+      nuts_3_2013,
+      nuts_3_2002,
+      nuts_2_2013,
+      nuts_1_2013,
+      pais,
+      ""
+    )
+    # Joins the dimension strings in a list
+    dimmension_reference <- c(
+      "&Dim2=",
+      "&Dim2=",
+      "&Dim2=",
+      "&Dim2=",
+      "&Dim2=",
+      "&Dim2=",
+      "&Dim2=",
+      "&Dim2=",
+      ""
+    )
+    # Joins the col_names strings in a list
+    level_names_reference <- c(
+      "dicofre_2013",
+      "municipio_2013_cod",
+      "municipio_2002_cod",
+      "nuts3_2013_cod",
+      "nuts3_2002_cod",
+      "nuts2_2013_cod",
+      "nuts1_2013_cod",
+      "pais_cod",
+      ""
+    )
+    # Set the codes to test - one parish/municipality/NUTS III that changed codes between 2002 and 2013
+    level_test <- c(
+      # Tests parishes
+      "&Dim2=011102&lang=PT",
+      # Tests 2013 municipalities
+      "&Dim2=16E0111&lang=PT",
+      # Tests 2002 municipalities
+      "&Dim2=1610111&lang=PT",
+      # Tests 2013 NUTS III
+      "&Dim2=16E&lang=PT",
+      # Tests 2002 NUTS III
+      "&Dim2=161&lang=PT",
+      # Tests NUTS II
+      "&Dim2=16&lang=PT",
+      # Tests NUTS II
+      "&Dim2=1&lang=PT",
+      # Tests country
+      "&Dim2=PT&lang=PT"
+    )
+    
+    for (i in 1:length(indicators)) {
+      # Get the current indicator
+      indicators_current <- indicators[i]
+      result_list[[indicators_current]] <- data.frame()
+      # Call the sleep function
+      counter <- sleep(counter)
+      # Prepare an empty list for the test
+      test <- list()
+      # Call the INE API to test the different codes and stores the results in a list of tibbles
+      for (j in 1:length(level_test)) {
+        counter <- sleep(counter)
+        test[[j]] <-
+          as.data.frame(fromJSON(
+            paste0(
+              "https://www.ine.pt/ine/json_indicador/pindica.jsp?op=2&varcd=",
+              indicators_current,
+              "&Dim1=T",
+              level_test[j]
+            )
+          ))
+      }
+      if (!is.null(groups_chosen) & !is.null(groups_other)) {
+        groups_chosen <- c(groups_chosen, groups_other)
+      }
+      success <- c(10)
+      for (k in 1:length(groups_chosen)) {
+        # Set starting level
+        l <- case_when(
+          groups_chosen[k] == "Freguesia" ~ 1,
+          groups_chosen[k] == "Município" ~ 2,
+          groups_chosen[k] == "Distrito" ~ 2,
+          groups_chosen[k] == "NUTS III" ~ 4,
+          groups_chosen[k] == "NUTS II" ~ 6,
+          groups_chosen[k] == "NUTS I" ~ 7,
+          groups_chosen[k] == "País" ~ 8,
+          groups_chosen[k] == "ACES" ~ 1,
+          groups_chosen[k] == "ARS" ~ 2,
+          # If all others fail, the default is the parish level
+          TRUE ~ 1
+        )
+        # Sets the chosen values from the starting level
+        codes_chosen <- codes_reference[[l]]
+        dimmension_chosen <- dimmension_reference[l]
+        geo_chosen <- geo_reference[[l]]
+        level_names_chosen <- level_names_reference[l]
+        # If it fails, then it increments until it finds a level with data
+        while (!(("Falso" %in% colnames(test[[l]]$Sucesso)) && l < 9)) {
+          l <- l + 1
+          if (l > 8) {
+          codes_chosen <- codes_reference[[9]]
+          dimmension_chosen <- dimmension_reference[9]
+          geo_chosen <- geo_reference[[9]]
+          level_names_chosen <- level_names_reference[9]
+            errorCondition("Condições selecionadas sem resultados para este indicador.")
+            next
+          }
+          codes_chosen <- codes_reference[[l]]
+          dimmension_chosen <- dimmension_reference[l]
+          geo_chosen <- geo_reference[[l]]
+          level_names_chosen <- level_names_reference[l]
+          # Error condition when none of the selected levels have data
+        }
+        # If the level we want was already retrieved, jump to the next `groups_chosen`
+        if (l %in% success) {
+          next
+        } else {
+          # Set an empty result data frame for all codes in each level
+          df_all <- data.frame()
+          # It increments along the codes
+          for (m in 1:length(codes_chosen)) {
+            # Call the sleep function
+            counter <- sleep(counter)
+            # Call the INE API to gather the datasets for each code
+            results_raw <-
+              fromJSON(
+                paste0(
+                  "https://www.ine.pt/ine/json_indicador/pindica.jsp?op=2&varcd=",
+                  indicators_current,
+                  "&Dim1=T",
+                  dimmension_chosen,
+                  codes_chosen[m],
+                  "&lang=PT"
+                )
+              )
+            if( "Falso" %in% colnames(results_raw[]$Sucesso) ){
+              success <- sort(c(success, l))
+              next
+            }
+            # Extracts the data from  the INE API response
+            results <- as.data.frame(results_raw$Dados)
+            observation_available_names <- colnames(results)
+            observation_available <- length(observation_available_names)
+            # Checks if the requested number of observations is available
+            if (observation_requested > observation_available) {
+              observation_used <- observation_available
+            } else {
+              observation_used <- observation_requested
+            }
+            # Get names of the observations of interest
+            observation_used_names <- c(observation_available_names[(observation_available - observation_used + 1):(observation_available)])
+            # Set an empty result data frame for all observations in each code
+            df_observations <- data.frame()
+            # Loop over observations
+            for (observation_current in observation_used_names) {
+              # Remove everything except the observations we want
+              df <- results |>
+                unnest(!!sym(observation_current)) |>
+                select(-any_of(observation_available_names)) |>
+                mutate(
+                  obs = as.character(observation_current),
+                  valor = as.numeric(valor)
+                )
+              # Add results to data frame for all observations in each code
+              df_observations <- bind_rows(df_observations, df)
+            }
+          # Add results to data frame for all codes in each level
+          df_all <- bind_rows(df_observations, df_all)
+            
+          # If only one level and code were requested, it outputs the results directly
+          if (k == 1 & m == 1) {
+            result_list[[indicators_current]] <- df_all
+          } else {
+            # If more than one group OR code were requested, it adds the results to the existing ones
+            result_list[[indicators_current]] <-
+              bind_rows(result_list[[indicators_current]], df_all) |>
+              unique()
+          }
+          # Adds the group we retrieved to the list
+          success <- sort(c(success, l))
+          }
+        }
+        # Runs the synthetic groups if requested and possible
+        if (any(c("Distrito", "ACES", "ARS") %in% groups_chosen) & min(success) < 4) {
+          if (1 %in% success) {
+            level_names_success <- level_names_reference[1]
+          } else if (2 %in% success) {
+            level_names_success <- level_names_reference[2]
+          } else if (3 %in% success) {
+            level_names_success <- level_names_reference[3]
+          }
+          if ("Distrito" %in% groups_chosen) {
+            if(any(str_detect(colnames(result_list[[indicators_current]]), "dim"))){
+              if(sum(str_detect(colnames(result_list[[indicators_current]]), "dim"))== 2){
+                result_list[[indicators_current]] <- bind_rows(
+                  result_list[[indicators_current]],
+                  result_list[[indicators_current]] |>
+                    # Adds the geographical information
+                    left_join(geo_chosen,
+                              by = c("geocod" = as.character(level_names_success)),
+                              multiple = "first"
+                    ) |>
+                    # Groups the results
+                    summarise(
+                      geocod = distrito_2013_cod,
+                      geodsg = distrito_2013,
+                      valor = sum(valor,na.rm=TRUE),
+                      # obs = obs,
+                      .by = c(obs, distrito_2013, dim_3, dim_3_t)) |>
+                    select(geocod, geodsg, dim_3, dim_3_t, valor, obs) |>
+                    unique()
+                )}else if(sum(str_detect(colnames(result_list[[indicators_current]]), "dim"))== 4){
+                  result_list[[indicators_current]] <- bind_rows(
+                    result_list[[indicators_current]],
+                    result_list[[indicators_current]] |>
+                      # Adds the geographical information
+                      left_join(geo_chosen,
+                                by = c("geocod" = as.character(level_names_success)),
+                                multiple = "first"
+                      ) |>
+                      # Groups the results
+                      summarise(
+                        geocod = distrito_2013_cod,
+                        geodsg = distrito_2013,
+                        valor = sum(valor,na.rm=TRUE),
+                        # obs = obs,
+                        .by = c(obs, distrito_2013, dim_3, dim_3_t, dim_4, dim_4_t)) |>
+                      select(geocod, geodsg,dim_3, dim_3_t, dim_4, dim_4_t, valor, obs) |>
+                      unique())}
+              else if(sum(str_detect(colnames(result_list[[indicators_current]]), "dim"))== 6){
+                result_list[[indicators_current]] <- bind_rows(
+                  result_list[[indicators_current]],
+                  result_list[[indicators_current]] |>
+                    # Adds the geographical information
+                    left_join(geo_chosen,
+                              by = c("geocod" = as.character(level_names_success)),
+                              multiple = "first"
+                    ) |>
+                    # Groups the results
+                    summarise(
+                      geocod = distrito_2013_cod,
+                      geodsg = distrito_2013,
+                      valor = sum(valor,na.rm=TRUE),
+                      # obs = obs,
+                      .by = c(obs, distrito_2013, dim_3, dim_3_t, dim_4, dim_4_t, dim_5, dim_5_t)) |>
+                    select(geocod, geodsg,dim_3, dim_3_t, dim_4, dim_4_t, dim_5, dim_5_t, valor, obs) |>
+                    unique())}
+            }else{ result_list[[indicators_current]] <- bind_rows(
+              result_list[[indicators_current]],
+              result_list[[indicators_current]] |>
+                # Adds the geographical information
+                left_join(geo_chosen,
+                          by = c("geocod" = as.character(level_names_success)),
+                          multiple = "first"
+                ) |>
+                # Groups the results
+                summarise(
+                  geocod = distrito_2013_cod,
+                  geodsg = distrito_2013,
+                  valor = sum(valor,na.rm=TRUE),
+                  # obs = obs,
+                  .by = c(obs, distrito_2013)) |>
+                # select(geocod, geodsg, valor, obs) |>
+                unique())}
+          } else if ("ACES" %in% groups_chosen) {
+            if(any(str_detect(colnames(result_list[[indicators_current]]), "dim"))){
+              if(sum(str_detect(colnames(result_list[[indicators_current]]), "dim"))== 2){
+                result_list[[indicators_current]] <- bind_rows(
+                  result_list[[indicators_current]],
+                  result_list[[indicators_current]] |>
+                    # Adds the geographical information
+                    left_join(geo_chosen,
+                              by = c("geocod" = as.character(level_names_success)),
+                              multiple = "first"
+                    ) |>
+                    # Groups the results
+                    summarise(
+                      geocod = aces_2022_cod,
+                      geodsg = aces_2022,
+                      valor = sum(valor, na.rm = TRUE),
+                      # obs = obs,
+                      .by = c(obs, aces_2022, dim_3, dim_3_t)
+                    ) |>
+                    select(geocod, geodsg, dim_3, dim_3_t, valor, obs) |>
+                    unique()
+                )}else if(sum(str_detect(colnames(result_list[[indicators_current]]), "dim"))== 4){
+                  result_list[[indicators_current]] <- bind_rows(
+                    result_list[[indicators_current]],
+                    result_list[[indicators_current]] |>
+                      # Adds the geographical information
+                      left_join(geo_chosen,
+                                by = c("geocod" = as.character(level_names_success)),
+                                multiple = "first"
+                      ) |>
+                      # Groups the results
+                      summarise(
+                        geocod = aces_2022_cod,
+                        geodsg = aces_2022,
+                        valor = sum(valor, na.rm = TRUE),
+                        # obs = obs,
+                        .by = c(obs, aces_2022, dim_3, dim_3_t, dim_4, dim_4_t)
+                      ) |>
+                      select(geocod, geodsg,dim_3, dim_3_t, dim_4, dim_4_t, valor, obs) |>
+                      unique())}
+              else if(sum(str_detect(colnames(result_list[[indicators_current]]), "dim"))== 6){
+                result_list[[indicators_current]] <- bind_rows(
+                  result_list[[indicators_current]],
+                  result_list[[indicators_current]] |>
+                    # Adds the geographical information
+                    left_join(geo_chosen,
+                              by = c("geocod" = as.character(level_names_success)),
+                              multiple = "first"
+                    ) |>
+                    # Groups the results
+                    summarise(
+                      geocod = aces_2022_cod,
+                      geodsg = aces_2022,
+                      valor = sum(valor, na.rm = TRUE),
+                      # obs = obs,
+                      # .by = c(obs, aces_2022)
+                      .by = c(obs, aces_2022, dim_3, dim_3_t, dim_4, dim_4_t, dim_5, dim_5_t)
+                    ) |>
+                    select(geocod, geodsg,dim_3, dim_3_t, dim_4, dim_4_t, dim_5, dim_5_t, valor, obs) |>
+                    unique())}
+            }else{ result_list[[indicators_current]] <- bind_rows(
+              result_list[[indicators_current]],
+              result_list[[indicators_current]] |>
+                # Adds the geographical information
+                left_join(geo_chosen,
+                          by = c("geocod" = as.character(level_names_success)),
+                          multiple = "first"
+                ) |>
+                # Groups the results
+                summarise(
+                  geocod = aces_2022_cod,
+                  geodsg = aces_2022,
+                  valor = sum(valor, na.rm = TRUE),
+                  # obs = obs,
+                  .by = c(obs, aces_2022)
+                ) |>
+                dplyr::select(geocod, geodsg, valor, obs) |>
+                unique())}
+          } else if ("ARS" %in% groups_chosen) {
+            if(any(str_detect(colnames(result_list[[indicators_current]]), "dim"))){
+              if(sum(str_detect(colnames(result_list[[indicators_current]]), "dim"))== 2){
+                result_list[[indicators_current]] <- bind_rows(
+                  result_list[[indicators_current]],
+                  result_list[[indicators_current]] |>
+                    # Adds the geographical information
+                    left_join(geo_chosen,
+                              by = c("geocod" = as.character(level_names_success)),
+                              multiple = "first"
+                    ) |>
+                    # Groups the results
+                    summarise(
+                      geocod = ars_2022_cod,
+                      geodsg = ars_2022,
+                      valor = sum(valor, na.rm=TRUE),
+                      # obs = obs,
+                      .by = c(obs, ars_2022, dim_3, dim_3_t)) |>
+                    select(geocod, geodsg, dim_3, dim_3_t, valor, obs) |>
+                    unique()
+                )}else if(sum(str_detect(colnames(result_list[[indicators_current]]), "dim"))== 4){
+                  result_list[[indicators_current]] <- bind_rows(
+                    result_list[[indicators_current]],
+                    result_list[[indicators_current]] |>
+                      # Adds the geographical information
+                      left_join(geo_chosen,
+                                by = c("geocod" = as.character(level_names_success)),
+                                multiple = "first"
+                      ) |>
+                      # Groups the results
+                      summarise(
+                        geocod = ars_2022_cod,
+                        geodsg = ars_2022,
+                        valor = sum(valor, na.rm=TRUE),
+                        # obs = obs,
+                        .by = c(obs, ars_2022, dim_3, dim_3_t, dim_4, dim_4_t)) |>
+                      select(geocod, geodsg,dim_3, dim_3_t, dim_4, dim_4_t, valor, obs) |>
+                      unique())}
+              else if(sum(str_detect(colnames(result_list[[indicators_current]]), "dim"))== 6){
+                result_list[[indicators_current]] <- bind_rows(
+                  result_list[[indicators_current]],
+                  result_list[[indicators_current]] |>
+                    # Adds the geographical information
+                    left_join(geo_chosen,
+                              by = c("geocod" = as.character(level_names_success)),
+                              multiple = "first"
+                    ) |>
+                    # Groups the results
+                    summarise(
+                      geocod = ars_2022_cod,
+                      geodsg = ars_2022,
+                      valor = sum(valor, na.rm=TRUE),
+                      # obs = obs,
+                      .by = c(obs, ars_2022, dim_3, dim_3_t, dim_4, dim_4_t, dim_5, dim_5_t)) |>
+                    select(geocod, geodsg,dim_3, dim_3_t, dim_4, dim_4_t, dim_5, dim_5_t, valor, obs) |>
+                    unique())}
+            }else{ result_list[[indicators_current]] <- bind_rows(
+              result_list[[indicators_current]],
+              result_list[[indicators_current]] |>
+                # Adds the geographical information
+                left_join(geo_chosen,
+                          by = c("geocod" = as.character(level_names_success)),
+                          multiple = "first"
+                ) |>
+                # Groups the results
+                # Groups the results
+                summarise(
+                  geocod = ars_2022_cod,
+                  geodsg = ars_2022,
+                  valor = sum(valor, na.rm=TRUE),
+                  # obs = obs,
+                  .by = c(obs, ars_2022)) |>
+                select(geocod, geodsg, valor, obs) |>
+                unique())}
+          }
+        }
+      }
+      if(!"valor" %in% colnames(result_list[[indicators_current]])){
+        result_list[[indicators_current]] <- data.frame(geocod=0, geodsg=0, valor=0,obs=0, year=0)
+      }
+      }
+    return(result_list)
+}
+
+filtered <-
+      geo_lookup |> filter("Portugal" %in% pais)
+
+geo_reference <- list(
+  freguesia_2013 = geo_lookup,
+  municipio_2013 = geo_lookup[3:20],
+  municipio_2002 = geo_lookup[3:20],
+  nuts3_2013 = geo_lookup[c(8:20)],
+  nuts3_2002 = geo_lookup[c(8:20)],
+  nuts2_2013 = geo_lookup[c(11:20)],
+  nuts1_2013 = geo_lookup[c(13:20)],
+  pais = geo_lookup[c(15:20)],
+  total = geo_lookup,
+  aces_2022 = geo_lookup[c(3:5, 8:20)],
+  ars_2022 = geo_lookup[c(3:5, 11:20)]
+)
+
+result_list_updated <- ine.get(
+  indicators = c("0008460")
+  ,selected_areas = filtered
+  ,observation_requested = c(1)
+  ,result_list = result_list
+  ,geo_reference = geo_reference
+  ,groups_chosen = "País"
+  ,groups_other = NULL)
+
+level_test <- c(
+      # Tests parishes
+      "&Dim2=011102&lang=PT",
+      # Tests 2013 municipalities
+      "&Dim2=16E0111&lang=PT",
+      # Tests 2002 municipalities
+      "&Dim2=1610111&lang=PT",
+      # Tests 2013 NUTS III
+      "&Dim2=16E&lang=PT",
+      # Tests 2002 NUTS III
+      "&Dim2=161&lang=PT",
+      # Tests NUTS II
+      "&Dim2=16&lang=PT",
+      # Tests NUTS II
+      "&Dim2=1&lang=PT",
+      # Tests country
+      "&Dim2=PT&lang=PT"
+    )
+
+test <-
+          as.data.frame(fromJSON(
+            paste0(
+              "https://www.ine.pt/ine/json_indicador/pindica.jsp?op=2&varcd=",
+              "0008460",
+              "&Dim1=T",
+              "&Dim2=PT&lang=PT"
+            )
+          ))
+
+      # Get the current indicator
+      indicators_current <- "0008460"
+      result_list[[indicators_current]] <- data.frame()
+      # Call the sleep function
+      # counter <- sleep(counter)
+      # Prepare an empty list for the test
+      test <- list()
+      # Call the INE API to test the different codes and stores the results in a list of tibbles
+      for (j in 1:length(level_test)) {
+        # counter <- sleep(counter)
+        test[[j]] <-
+          as.data.frame(fromJSON(
+            paste0(
+              "https://www.ine.pt/ine/json_indicador/pindica.jsp?op=2&varcd=",
+              indicators_current,
+              "&Dim1=T",
+              level_test[j]
+            )
+          ))
+      }
+```
+####Theme extractor
+```{r}
+install.packages("XML")
+install.packages("methods")
+install.packages("xml2")
+library(methods)
+library(XML)
+library(xml2)
+test <-
+          as.data.frame(fromJSON(
+            paste0(
+              "https://www.ine.pt/ine/json_indicador/pindica.jsp?op=2&varcd=",
+              "0008460",
+              "&Dim1=T",
+              "&Dim2=PT&lang=PT"
+            )
+          ))
+
+      # Get the current indicator
+      indicators_current <- "0008460"
+      result_list[[indicators_current]] <- data.frame()
+      # Call the sleep function
+      # counter <- sleep(counter)
+      # Prepare an empty list for the test
+      test <- list()
+      # Call the INE API to test the different codes and stores the results in a list of tibbles
+      for (j in 1:length(level_test)) {
+        # counter <- sleep(counter)
+        test[[j]] <-
+          as.data.frame(fromJSON(
+            paste0(
+              "https://www.ine.pt/ine/json_indicador/pindica.jsp?op=2&varcd=",
+              indicators_current,
+              "&Dim1=T",
+              level_test[j]
+            )
+          ))
+      }
+test <- results_raw <- fromJSON(
+      paste0(
+        "https://www.ine.pt/ine/json_indicador/pindicaMeta.jsp?varcd=",
+        "0008460",
+        "&lang=PT"
+      ))
+
+
+xml <- xmlToDataFrame("https://www.ine.pt/ine/xml_indic.jsp?opc=2&lang=PT")
+
+
+xml_data <- xmlParse("INE_API/datasets/ine.xml")
+xml_structure(xml)
+indicator <- xml_text(xml_find_all(xml_data, ".//theme"))
+
+xml_data <- xmlParse("INE_API/datasets/final_ine.xml")
+```
+
+```{r}
+install.packages("xml2")
+library(xml2)
+
+url <- "https://www.ine.pt/ine/xml_indic.jsp?opc=2&lang=PT"
+
+# Set the path to save the downloaded file
+file_path <- "path_to_save/file.xml"
+# Replace "path_to_save/file.xml" with the desired path and filename for the downloaded file
+
+# Download the XML file
+download.file(url, destfile = file_path, mode = "wb")
+
+# Read the downloaded XML file
+xml_file <- read_xml(file_path)
+xml_file <- read_xml("INE_API/datasets/final_ine.xml")
+# Access the root node
+root_node <- xml_root(xml_file)
+
+# Access child nodes
+child_nodes <- xml_children(root_node)
+
+# Access attributes of a node
+attributes <- xml_attrs(root_node)
+
+
+node_values <- xml_text(xml_find_all(xml_file, "//node_name"))
+
+# testxml <- xmlParse("INE_API/datasets/final_ine.xml")
+# 
+# dataframe <-xmlToDataFrame(xml_file)
+theme <- xml_text(xml_find_all(xml_file, "//node_name"))
+library(xml2)
+
+# Read the XML data
+xml_file <- read_xml("INE_API/datasets/final_ine.xml")
+
+# Extract values from XML nodes
+extraction_date <- xml_text(xml_find_all(xml_file, "//extraction_date"))
+source <- xml_text(xml_find_all(xml_file, "//source"))
+theme <- xml_text(xml_find_all(xml_file, "//theme"))
+subtheme <- xml_text(xml_find_all(xml_file, "//subtheme"))
+keywords <- xml_text(xml_find_all(xml_file, "//keywords"))
+title <- xml_text(xml_find_all(xml_file, "//title"))
+varcd <- xml_text(xml_find_all(xml_file, "//varcd"))
+description <- xml_text(xml_find_all(xml_file, "//description"))
+geo_lastlevel <- xml_text(xml_find_all(xml_file, "//geo_lastlevel"))
+first_period_available <- xml_text(xml_find_all(xml_file, "//first_period_available"))
+last_period_available <- xml_text(xml_find_all(xml_file, "//last_period_available"))
+last_update <- xml_text(xml_find_all(xml_file, "//last_update"))
+periodicity <- xml_text(xml_find_all(xml_file, "//periodicity"))
+update_type <- xml_text(xml_find_all(xml_file, "//update_type"))
+bdd_url <- xml_text(xml_find_all(xml_file, "//bdd_url"))
+metainfo_url <- xml_text(xml_find_all(xml_file, "//metainfo_url"))
+json_dataset <- xml_text(xml_find_all(xml_file, "//json_dataset"))
+json_metainfo <- xml_text(xml_find_all(xml_file, "//json_metainfo"))
+
+# Create a dataframe
+source
+extraction_date 
+theme, 
+subtheme,
+df <- data.frame( keywords, title, varcd, description,
+                 geo_lastlevel, first_period_available, last_period_available, last_update,
+                 periodicity, update_type, bdd_url, metainfo_url, json_dataset, json_metainfo)
+
+# Print the dataframe
+print(df)
+
+
+```
+
+#Final Catalog extractor
+```{r}
+url <- "https://www.ine.pt/ine/xml_indic.jsp?opc=2&lang=PT"
+
+# Set the path to save the downloaded file
+file_path <- "INE_API/datasets/final_ine.xml"
+
+# Replace "path_to_save/file.xml" with the desired path and filename for the downloaded file
+
+# Download the XML file
+download_xml(url, file = file_path, mode = "wb")
+
+# Read the downloaded XML file
+xml_file <- read_xml(file_path)
+
+
+get_node_values <- function(nodes) {
+  if (length(nodes) > 0) {
+    return(xml_text(nodes))
+  } else {
+    return(NA)
+  }
+}
+
+# Extract values from XML nodes
+extraction_date <- get_node_values(xml_find_first(xml_file, "//extraction_date"))
+
+source <- get_node_values(xml_find_first(xml_file, "//source"))
+
+
+themes <- xml_find_all(xml_file, "//theme")
+theme <- sapply(themes, function(node) {
+  theme_text <- xml_text(node)
+  if (length(theme_text) > 0) {
+    return(theme_text[1])
+  } else {
+    return(NA)
+  }
+})
+
+subthemes <- xml_find_all(xml_file, "//subtheme")
+subtheme <- sapply(subthemes, function(node) {
+  subtheme_text <- xml_text(node)
+  if (length(subtheme_text) > 0) {
+    return(subtheme_text[1])
+  } else {
+    return(NA)
+  }
+})
+
+# Extract values from XML nodes
+extraction_date <- get_node_values(xml_find_first(xml_file, "//extraction_date"))
+
+source <- get_node_values(xml_find_first(xml_file, "//source"))
+
+# themes <- xml_find_all(xml_file, "//theme" , flatten = FALSE)
+# subthemes <- xml_find_all(xml_file, "//subtheme", flatten = FALSE)
+# theme <- get_node_values(xml_find_all(xml_file, "//theme"))
+# subtheme <- get_node_values(xml_find_all(xml_file, "//subtheme"))
+keywords <- get_node_values(xml_find_all(xml_file, "//keywords"))
+title <- get_node_values(xml_find_all(xml_file, "//title"))
+varcd <- get_node_values(xml_find_all(xml_file, "//varcd"))
+description <- get_node_values(xml_find_all(xml_file, "//description"))
+geo_lastlevel <- get_node_values(xml_find_all(xml_file, "//geo_lastlevel"))
+first_period_available <- get_node_values(xml_find_all(xml_file, "//first_period_available"))
+last_period_available <- get_node_values(xml_find_all(xml_file, "//last_period_available"))
+last_update <- get_node_values(xml_find_all(xml_file, "//last_update"))
+periodicity <- get_node_values(xml_find_all(xml_file, "//periodicity"))
+update_type <- get_node_values(xml_find_all(xml_file, "//update_type"))
+bdd_url <- get_node_values(xml_find_all(xml_file, "//bdd_url"))
+metainfo_url <- get_node_values(xml_find_all(xml_file, "//metainfo_url"))
+json_dataset <- get_node_values(xml_find_all(xml_file, "//json_dataset"))
+json_metainfo <- get_node_values(xml_find_all(xml_file, "//json_metainfo"))
+
+
+extraction_date <- rep(c(extraction_date), each=length(description))
+source <- rep(c(source), each=length(description))
+# Create a dataframe
+df <- data.table(extraction_date, source, theme, subtheme, keywords, title, varcd, description,
+                 geo_lastlevel, first_period_available, last_period_available, last_update,
+                 periodicity, update_type, bdd_url, metainfo_url, json_dataset, json_metainfo)
+
+# Print the dataframe
+print(df)
+
+```
+
+```{r}
+library(xml2)
+library(data.table)
+
+# Read the XML data
+xml_file <- read_xml("path_to_file.xml")
+
+# Helper function to extract node value or return NA if the node doesn't exist
+get_node_value <- function(node) {
+  if (length(node) > 0) {
+    return(xml_text(node))
+  } else {
+    return(NA)
+  }
+}
+
+# Extract values from XML nodes
+extraction_date <- get_node_value(xml_find_first(xml_file, "//extraction_date"))
+source <- get_node_value(xml_find_first(xml_file, "//source"))
+
+themes <- xml_find_all(xml_file, "//theme")
+theme <- sapply(themes, function(node) {
+  theme_text <- xml_text(node)
+  if (length(theme_text) > 0) {
+    return(theme_text[1])
+  } else {
+    return(NA)
+  }
+})
+
+subthemes <- xml_find_all(xml_file, "//subtheme")
+subtheme <- sapply(subthemes, function(node) {
+  subtheme_text <- xml_text(node)
+  if (length(subtheme_text) > 0) {
+    return(subtheme_text[1])
+  } else {
+    return(NA)
+  }
+})
+
+keywords <- get_node_value(xml_find_first(xml_file, "//keywords"))
+title <- get_node_value(xml_find_first(xml_file, "//title"))
+varcd <- get_node_value(xml_find_first(xml_file, "//varcd"))
+description <- get_node_value(xml_find_first(xml_file, "//description"))
+geo_lastlevel <- get_node_value(xml_find_first(xml_file, "//geo_lastlevel"))
+first_period_available <- get_node_value(xml_find_first(xml_file, "//first_period_available"))
+last_period_available <- get_node_value(xml_find_first(xml_file, "//last_period_available"))
+last_update <- get_node_value(xml_find_first(xml_file, "//last_update"))
+periodicity <- get_node_value(xml_find_first(xml_file, "//periodicity"))
+update_type <- get_node_value(xml_find_first(xml_file, "//update_type"))
+bdd_url <- get_node_value(xml_find_first(xml_file, "//bdd_url"))
+metainfo_url <- get_node_value(xml_find_first(xml_file, "//metainfo_url"))
+json_dataset <- get_node_value(xml_find_first(xml_file, "//json_dataset"))
+json_metainfo <- get_node_value(xml_find_first(xml_file, "//json_metainfo"))
+
+# Create a data.table
+df <- data.table(extraction_date, source, theme, subtheme, keywords, title, varcd, description,
+                 geo_lastlevel, first_period_available, last_period_available, last_update,
+                 periodicity, update_type, bdd_url, metainfo_url, json_dataset, json_metainfo)
+
+# Print the data.table
+print(df)
+
+```
+
+```{r}
+library(xml2)
+
+# Helper function to extract node value or return NA if the node doesn't exist
+get_node_value <- function(node) {
+  if (length(node) > 0) {
+    return(xml_text(node))
+  } else {
+    return(NA)
+  }
+}
+
+# Extract indicator nodes
+indicator_nodes <- xml_find_all(xml_file, "//indicator")
+
+# Initialize lists to store indicator information
+indicators <- list()
+themes <- list()
+
+# Iterate over indicator nodes and extract information
+for (node in indicator_nodes) {
+  indicator <- get_node_value(xml_find_first(node, ".//varcd"))
+  theme <- get_node_value(xml_find_first(node, ".//theme"))
+  
+  indicators <- c(indicators, indicator)
+  themes <- c(themes, theme)
+}
+
+# Create a data frame
+df <- data.frame(indicator = unlist(indicators),
+                 theme = unlist(themes))
+
+# Print the data frame
+print(df)
+
+```
+
+```{r}
+
+restaurant_license_xml <-  as_list(xml_file)
+
+
+xml_df <- tibble::as_tibble(restaurant_license_xml) %>%
+  unnest_longer(catalog)
+
+xml_wider <-  xml_df %>%
+  dplyr::filter(DATA_id == "indicator") %>%
+  unnest_wider(DATA) 
+
+```
+
+```{r}
+library(xml2)
+
+# Helper function to extract node value or return NA if the node doesn't exist
+# get_node_value <- function(node) {
+#   if (length(node) > 0) {
+#     return(xml_text(node))
+#   } else {
+#     return(NA)
+#   }
+# }
+
+# Extract indicator nodes
+indicator_nodes <- xml_find_all(xml_file, "//indicator")
+
+# Initialize lists to store indicator information
+indicators <- list()
+themes <- list()
+subthemes <- list()
+
+# Iterate over indicator nodes and extract information
+for (node in indicator_nodes) {
+  indicator <- 
+     # get_node_value(
+       xml_find_first(node, "./varcd")
+  theme <- 
+    # get_node_value(
+      xml_find_first(node, "./theme")
+  subtheme <- 
+    # get_node_value(
+    xml_find_first(node, "./subtheme")
+  
+  indicators <- c(indicators, indicator)
+  themes <- c(themes, theme)
+  subthemes <- c(subthemes, subtheme)
+}
+
+# Create a data frame
+df <- data.frame(indicator = unlist(indicators),
+                 theme = unlist(themes),
+                 subtheme = unlist(subthemes))
+
+# Print the data frame
+print(df)
+
+```
+#### FINAL ONE
+```{r}
+library(xml2)
+
+url <- "https://www.ine.pt/ine/xml_indic.jsp?opc=2&lang=PT"
+
+# Set the path to save the downloaded file
+file_path <- "INE_API/datasets/final_ine.xml"
+
+# Replace "path_to_save/file.xml" with the desired path and filename for the downloaded file
+
+# Download the XML file
+download_xml(url, file = file_path, mode = "wb")
+
+# Read the downloaded XML file
+xml_file <- read_xml(file_path)
+
+get_node_values <- function(nodes) {
+  if (length(nodes) > 0) {
+    return(xml_text(nodes))
+  } else {
+    return(NA)
+  }
+}
+
+# restaurant_license_xml <-  as_list(xml_file)
+# xml_df <- tibble::as_tibble(restaurant_license_xml) %>%
+#   unnest_longer(catalog)
+
+
+# Extract values from XML nodes
+extraction_date <- get_node_values(xml_find_first(xml_file, "//extraction_date"))
+source <- get_node_values(xml_find_first(xml_file, "//source"))
+keywords <- get_node_values(xml_find_all(xml_file, "//keywords"))
+title <- get_node_values(xml_find_all(xml_file, "//title"))
+varcd <- get_node_values(xml_find_all(xml_file, "//varcd"))
+description <- get_node_values(xml_find_all(xml_file, "//description"))
+geo_lastlevel <- get_node_values(xml_find_all(xml_file, "//geo_lastlevel"))
+first_period_available <- get_node_values(xml_find_all(xml_file, "//first_period_available"))
+last_period_available <- get_node_values(xml_find_all(xml_file, "//last_period_available"))
+last_update <- get_node_values(xml_find_all(xml_file, "//last_update"))
+periodicity <- get_node_values(xml_find_all(xml_file, "//periodicity"))
+update_type <- get_node_values(xml_find_all(xml_file, "//update_type"))
+bdd_url <- get_node_values(xml_find_all(xml_file, "//bdd_url"))
+metainfo_url <- get_node_values(xml_find_all(xml_file, "//metainfo_url"))
+json_dataset <- get_node_values(xml_find_all(xml_file, "//json_dataset"))
+json_metainfo <- get_node_values(xml_find_all(xml_file, "//json_metainfo"))
+indicator_nodes <- xml_find_all(xml_file, "//indicator")
+
+
+extraction_date <- rep(c(extraction_date), each=length(description))
+source <- rep(c(source), each=length(description))
+
+# for (node in indicator_nodes) {
+#   theme <- 
+#     # get_node_value(
+#       xml_find_first(node, "./theme")
+#   subtheme <- 
+#     # get_node_value(
+#       xml_find_first(node, "./subtheme")
+#   
+#   themes <- c(themes, theme)
+#   subthemes <- c(subthemes, subtheme)
+# }
+# 
+# theme <- unlist(themes)
+# subtheme <- unlist(subthemes)
+# Create a dataframe
+# theme, 
+# subtheme,
+
+df <- data.table(extraction_date, source,  keywords, title, varcd, description,
+                 geo_lastlevel, first_period_available, last_period_available, last_update,
+                 periodicity, update_type, bdd_url, metainfo_url, json_dataset, json_metainfo)
+
+
+# Print the dataframe
+print(df)
+```
+
+```{r}
+library(xml2)
+
+url <- "https://www.ine.pt/ine/xml_indic.jsp?opc=2&lang=PT"
+
+# Set the path to save the downloaded file
+file_path <- "INE_API/datasets/final_ine.xml"
+
+# Replace "path_to_save/file.xml" with the desired path and filename for the downloaded file
+
+# Download the XML file
+download_xml(url, file = file_path, mode = "wb")
+
+# Read the downloaded XML file
+xml_file <- read_xml(file_path)
+
+
+# Helper function to extract node value or return NA if the node doesn't exist
+get_node_value <- function(node, xpath) {
+  target_node <- xml_find_first(node, xpath)
+  if (!is.null(target_node)) {
+    return(xml_text(target_node))
+  } else {
+    return(NA)
+  }
+}
+
+# Extract indicator nodes
+indicator_nodes <- xml_find_all(xml_file, "//indicator")
+
+# Extract indicator information
+indicators <- lapply(indicator_nodes, function(node) {
+  data <- data.frame(
+    theme = get_node_value(node, "./theme[1]"),
+    subtheme = get_node_value(node, "./subtheme[1]"),
+    keywords = get_node_value(node, "./keywords"),
+    title = get_node_value(node, "./title"),
+    varcd = get_node_value(node, "./varcd"),
+    description = get_node_value(node, "./description"),
+    geo_lastlevel = get_node_value(node, "./geo_lastlevel"),
+    first_period_available = get_node_value(node, "./dates/first_period_available"),
+    last_period_available = get_node_value(node, "./dates/last_period_available"),
+    last_update = get_node_value(node, "./dates/last_update"),
+    periodicity = get_node_value(node, "./periodicity"),
+    update_type = get_node_value(node, "./update_type"),
+    bdd_url = get_node_value(node, "./html/bdd_url"),
+    metainfo_url = get_node_value(node, "./html/metainfo_url"),
+    json_dataset = get_node_value(node, "./json/json_dataset"),
+    json_metainfo = get_node_value(node, "./json/json_metainfo")
+  )
+  return(data)
+})
+
+# Combine indicator information into a single data frame
+df <- do.call(rbind, indicators)
+
+# Print the data frame
+print(df)
+
+library(data.table)
+fwrite(
+  df,
+  file = "INE_API/datasets/final_ine.csv",
+  sep = ";"
+  , bom = TRUE
+)
+
+
+results_raw1 <-
+              fromJSON(
+                paste0(
+                  "https://www.ine.pt/ine/json_indicador/pindica.jsp?op=2&varcd=",
+                  "0011626",
+                  # "&Dim1=T",
+                  # "&Dim2=",
+                  # "PT",
+                  "&lang=PT"
+                )
+              )
+
+
+  paste0(
+                  "https://www.ine.pt/ine/json_indicador/pindica.jsp?op=2&varcd=",
+                  "0011626",
+                  # "&Dim1=T",
+                  # "&Dim2=",
+                  # "PT",
+                  "&lang=PT"
+                )
+
+```
+
+```{r}
+results1 <- as.data.frame(results_raw1$Dados) |> unnest()
+library(rio)
+library(tidyverse)
+export(results,"pop_muni_2022.csv",bom=TRUE)
+
+codigos_df <- import("datasets/geo_linkage_2024_v2_1.csv", colClasses=c("character"))
+
+codigosdf2 <- codigos_df |> 
+  select(dicofre_2013,uls_2023)
+
+dataset <- full_join(
+  d3,codigosdf2, by= join_by("geocod"==dicofre_2013), multiple="all"
+)
+
+dataset$dim_4 <- as.numeric(dataset$dim_4)
+dataset$valor <- as.numeric(dataset$valor)
+
+teste <- dataset |> 
+  filter(is.na(uls_2023))
+
+dataset <- dataset |>
+  filter(!is.na(dim_4)) |> 
+  summarise(
+    valor=sum(as.numeric(valor)),
+    .by= c(uls_2023,dim_4,dim_3_t)
+  )
+
+dataset1 <- dataset |> 
+  mutate(etario = case_when(
+    dim_4 %in% gr_1 ~ "<1 ano"
+    ,dim_4 %in% gr_2 ~ "1 - 4 anos"
+    ,dim_4 %in% gr_3 ~ "5 - 9 anos"
+    ,dim_4 %in% gr_4 ~ "10 - 14 anos"
+    ,dim_4 %in% gr_5 ~ "15 - 19 anos"
+    ,dim_4 %in% gr_6 ~ "20 - 24 anos"
+    ,dim_4 %in% gr_7 ~ "25 - 29 anos"
+    ,dim_4 %in% gr_8 ~ "30 - 34 anos"
+    ,dim_4 %in% gr_9 ~ "35 - 39 anos"
+    ,dim_4 %in% gr_10 ~ "40 - 44 anos"
+    ,dim_4 %in% gr_11 ~ "45 - 49 anos"
+    ,dim_4 %in% gr_12 ~ "50 - 54 anos"
+    ,dim_4 %in% gr_13 ~ "55 - 59 anos"
+    ,dim_4 %in% gr_14 ~ "60 - 64 anos"
+    ,dim_4 %in% gr_15 ~ "65 - 69 anos"
+    ,dim_4 %in% gr_16 ~ "70 - 74 anos"
+    ,dim_4 %in% gr_17 ~ "75 - 80 anos"
+     ,dim_4 %in% gr_18 ~ "81 - 84 anos"
+     ,dim_4 %in% gr_19 ~ "85 e mais anos"
+     # ,dim_4 %in% gr_20 ~ "Total"
+   ))
+
+
+dataset1 <- dataset1 |> 
+  summarise(
+    valor=sum(valor),
+    .by= c(uls_2023,etario,dim_3_t)
+  )
+
+dataset1 <- dataset1 |> 
+  arrange(uls_2023) |> 
+  filter(dim_3_t!="HM")
+
+dataset2 <- dataset1 |> 
+  pivot_wider(
+    id_cols = c(uls_2023,dim_3_t),
+    names_from = etario,
+    values_from = valor
+  )
+
+export(dataset2, "pop_uls_freg_2.csv", bom=T)
+
+```
+

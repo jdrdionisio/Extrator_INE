@@ -3,16 +3,6 @@
 #
 # Find out more about building applications with Shiny here:
 #    http://shiny.rstudio.com/
-#
-# install.packages("shinyWidgets")
-# install.packages("fuzzyjoin")
-# install.packages("DT")
-# install.packages("shinyjs")
-# install.packages('rsconnect')
-# install.packages('stringdist')
-# install.packages("bslib")
-# install.packages("thematic")
-# install.packages("shinycssloaders")
 library(shiny)
 library(shinyWidgets)
 library(tidyverse)
@@ -24,13 +14,14 @@ library(data.table)
 library(DT)
 library(shinyjs)
 library(bslib)
-library(thematic)
 library(shinycssloaders)
-
+library(ggthemes)
+library(plotly)
 # Load a reference table of geographical aggregations and Portuguese health clusters
 geo_lookup <-
-  read_csv(
-    "datasets/geolinkage_aces_2022.csv",
+  read_delim(
+    "datasets/geo_linkage_2024_v2.csv",
+    delim=";",
     col_types = cols(.default = "c"),
     locale = locale("pt")
   )
@@ -40,15 +31,16 @@ geo_lookup <- geo_lookup |>
 # What data should be bound in the end?
 geo_reference <- list(
   freguesia_2013 = geo_lookup,
-  municipio_2013 = geo_lookup[3:20],
-  municipio_2002 = geo_lookup[3:20],
-  nuts3_2013 = geo_lookup[c(8:20)],
-  nuts3_2002 = geo_lookup[c(8:20)],
-  nuts2_2013 = geo_lookup[c(11:20)],
-  nuts1_2013 = geo_lookup[c(13:20)],
-  pais = geo_lookup[c(15:20)],
-  aces_2022 = geo_lookup[c(3:5, 8:20)],
-  ars_2022 = geo_lookup[c(3:5, 11:20)]
+  municipio_2013 = geo_lookup[3:21],
+  municipio_2002 = geo_lookup[3:21],
+  nuts3_2013 = geo_lookup[c(8:21)],
+  nuts3_2002 = geo_lookup[c(8:21)],
+  nuts2_2013 = geo_lookup[c(11:21)],
+  nuts1_2013 = geo_lookup[c(13:21)],
+  pais = geo_lookup[c(15:21)],
+  aces_2022 = geo_lookup[c(3:5, 8:21)],
+  uls_2023 = geo_lookup[c(3:5, 8:21)],
+  ars_2022 = geo_lookup[c(3:5, 11:21)]
 )
 # Retrieve the available indicators
 indicators <- read_excel("datasets/Indicadores.xlsx",
@@ -61,10 +53,13 @@ indicators <- read_excel("datasets/Indicadores.xlsx",
 # Prepare an empty list for the results
 result_list <- list()
 meta_list <- list()
+chosen_group_options <- NULL
+# Define UI for application that draws a histogram
+# thematic::thematic_shiny(font_google("Lato"))
 # Sleep function to prevent server lockout, rests for 5 seconds every 100 requests
 sleep <- function(z) {
-  if (z %% 100 == 0) {
-    Sys.sleep(5)
+  if (z %% 99 == 0) {
+    Sys.sleep(1)
     z <- 1
   } else {
     z <- z + 1
@@ -118,7 +113,7 @@ ine.meta <- function(indicators, meta_list){
   return(meta_list)
 }
 # Main funtion for INE indicators extraction
-ine.get <- function(indicators,selected_areas,observation_requested, result_list, geo_reference,groups_chosen, groups_other) {
+ine.get <- function(indicators,selected_areas,observation_requested, result_list, geo_reference,groups_chosen, groups_other, individual) {
     # Set the sleep timer to 0
     counter <- 0
     # Save the selected areas' codes into vectors
@@ -188,6 +183,7 @@ ine.get <- function(indicators,selected_areas,observation_requested, result_list
     for (i in 1:length(indicators)) {
       # Get the current indicator
       indicators_current <- indicators[i]
+      # result_list[[indicators_current]] <- data.frame()
       # Call the sleep function
       counter <- sleep(counter)
       # Prepare an empty list for the test
@@ -208,206 +204,657 @@ ine.get <- function(indicators,selected_areas,observation_requested, result_list
       if (!is.null(groups_chosen) & !is.null(groups_other)) {
         groups_chosen <- c(groups_chosen, groups_other)
       }
-      success <- c(10)
-      for (k in 1:length(groups_chosen)) {
-        # Set starting level
-        l <- case_when(
-          groups_chosen[k] == "Freguesia" ~ 1,
-          groups_chosen[k] == "Município" ~ 2,
-          groups_chosen[k] == "Distrito" ~ 2,
-          groups_chosen[k] == "NUTS III" ~ 4,
-          groups_chosen[k] == "NUTS II" ~ 6,
-          groups_chosen[k] == "NUTS I" ~ 7,
-          groups_chosen[k] == "País" ~ 8,
-          groups_chosen[k] == "ACES" ~ 1,
-          groups_chosen[k] == "ARS" ~ 2,
-          # If all others fail, the default is the parish level
-          TRUE ~ 1
-        )
-        # Sets the chosen values from the starting level
-        codes_chosen <- codes_reference[[l]]
-        dimmension_chosen <- dimmension_reference[l]
-        geo_chosen <- geo_reference[[l]]
-        level_names_chosen <- level_names_reference[l]
-        # If it fails, then it increments until it finds a level with data
-        while ("Falso" %in% colnames(test[[l]]$Sucesso) & l < 11) {
-          l <- l + 1
+      # attempt to extract everything at once
+      if(observation_requested==1 & isFALSE(individual)){
+        all <- as.data.frame(fromJSON(
+          paste0(
+            "https://www.ine.pt/ine/json_indicador/pindica.jsp?op=2&varcd=",
+            indicators_current,
+            "&lang=PT"
+          )
+        ))
+      }else if(isFALSE(individual)){
+        all <- as.data.frame(fromJSON(
+          paste0(
+            "https://www.ine.pt/ine/json_indicador/pindica.jsp?op=2&varcd=",
+            indicators_current,
+            "&Dim1=T&lang=PT"
+          )
+        ))
+      } else{
+        all <- list(Sucesso = data.frame("Falso" =c("Falso")))
+      }
+      if("Falso" %in% colnames(all[]$Sucesso) ){
+        success <- c(10)
+        for (k in 1:length(groups_chosen)) {
+          # Set starting level
+          l <- case_when(
+            groups_chosen[k] == "Freguesia" ~ 1,
+            groups_chosen[k] == "Município" ~ 2,
+            groups_chosen[k] == "Distrito" ~ 2,
+            groups_chosen[k] == "NUTS III" ~ 4,
+            groups_chosen[k] == "NUTS II" ~ 6,
+            groups_chosen[k] == "NUTS I" ~ 7,
+            groups_chosen[k] == "País" ~ 8,
+            groups_chosen[k] == "ACES" ~ 1,
+            groups_chosen[k] == "ARS" ~ 2,
+            groups_chosen[k] == "ULS" ~ 2,
+            # If all others fail, the default is the parish level
+            TRUE ~ 1
+          )
+          # Sets the chosen values from the starting level
           codes_chosen <- codes_reference[[l]]
           dimmension_chosen <- dimmension_reference[l]
           geo_chosen <- geo_reference[[l]]
           level_names_chosen <- level_names_reference[l]
-          # Error condition when none of the selected levels have data
-          if (l == 10) {
-            errorCondition("Condições selecionadas sem resultados para este indicador.")
-          }
-        }
-        # If the level we want was already retrieved, jump to the next `groups_chosen`
-        if (l %in% success) {
-          next
-        } else {
-          # Set an empty result data frame for all codes in each level
-          df_all <- data.frame()
-          # It increments along the codes
-          for (m in 1:length(codes_chosen)) {
-            # Call the sleep function
-            counter <- sleep(counter)
-            # Call the INE API to gather the datasets for each code
-            results_raw <-
-              fromJSON(
-                paste0(
-                  "https://www.ine.pt/ine/json_indicador/pindica.jsp?op=2&varcd=",
-                  indicators_current,
-                  "&Dim1=T",
-                  dimmension_chosen,
-                  codes_chosen[m],
-                  "&lang=PT"
-                )
-              )
-            # Extracts the data from  the INE API response
-            results <- as.data.frame(results_raw$Dados)
-            observation_available_names <- colnames(results)
-            observation_available <- length(observation_available_names)
-            # Checks if the requested number of observations is available
-            if (observation_requested > observation_available) {
-              observation_used <- observation_available
-            } else {
-              observation_used <- observation_requested
+          # If it fails, then it increments until it finds a level with data
+          while ("Falso" %in% colnames(test[[l]]$Sucesso) & l < 10) {
+            l <- l + 1
+            codes_chosen <- codes_reference[[l]]
+            dimmension_chosen <- dimmension_reference[l]
+            geo_chosen <- geo_reference[[l]]
+            level_names_chosen <- level_names_reference[l]
+            # Error condition when none of the selected levels have data
+            if (l == 9) {
+              errorCondition("Condições selecionadas sem resultados para este indicador.")
             }
-            # Get names of the observations of interest
-            observation_used_names <- c(observation_available_names[(observation_available - observation_used + 1):(observation_available)])
-            # Set an empty result data frame for all observations in each code
-            df_observations <- data.frame()
-            # Loop over observations
-            for (observation_current in observation_used_names) {
-              # Remove everything except the observations we want
-              df <- results |>
-                unnest(!!sym(observation_current)) |>
-                select(-any_of(observation_available_names)) |>
-                mutate(
-                  obs = as.character(observation_current),
-                  valor = as.numeric(valor)
-                )
-              # Add results to data frame for all observations in each code
-              df_observations <- bind_rows(df_observations, df)
-            }
-          # Add results to data frame for all codes in each level
-          df_all <- bind_rows(df_observations, df_all)
           }
-          # If only one level and code were requested, it outputs the results directly
-          if (k == 1 & m == 1) {
-            result_list[[indicators_current]] <- df_all
+          # If the level we want was already retrieved, jump to the next `groups_chosen`
+          if (l %in% success) {
+            next
           } else {
-            # If more than one group OR code were requested, it adds the results to the existing ones
-            result_list[[indicators_current]] <-
-              bind_rows(result_list[[indicators_current]], df_all) |>
-              unique()
+            # Set an empty result data frame for all codes in each level
+            df_all <- data.frame()
+            # It increments along the codes
+            for (m in 1:length(codes_chosen)) {
+              # Call the sleep function
+              counter <- sleep(counter)
+              # Call the INE API to gather the datasets for each code
+              results_raw <-
+                fromJSON(
+                  paste0(
+                    "https://www.ine.pt/ine/json_indicador/pindica.jsp?op=2&varcd=",
+                    indicators_current,
+                    "&Dim1=T",
+                    dimmension_chosen,
+                    codes_chosen[m],
+                    "&lang=PT"
+                  )
+                )
+              if("Falso" %in% colnames(results_raw[]$Sucesso) ){
+                success <- sort(c(success, l))
+                next
+              }
+              # Extracts the data from  the INE API response
+              results <- as.data.frame(results_raw$Dados)
+              observation_available_names <- colnames(results)
+              observation_available <- length(observation_available_names)
+              # Checks if the requested number of observations is available
+              if (observation_requested > observation_available) {
+                observation_used <- observation_available
+              } else {
+                observation_used <- observation_requested
+              }
+              # Get names of the observations of interest
+              observation_used_names <- c(observation_available_names[(observation_available - observation_used + 1):(observation_available)])
+              # Set an empty result data frame for all observations in each code
+              df_observations <- data.frame()
+              # Loop over observations
+              for (observation_current in observation_used_names) {
+                # Remove everything except the observations we want
+                df <- results |>
+                  unnest(!!sym(observation_current))
+                if("valor" %in% colnames(df)){
+                  df <-df |> 
+                    select(-any_of(observation_available_names)) |>
+                    
+                    mutate(
+                      obs = as.character(observation_current),
+                      valor = as.numeric(valor)
+                    )
+                }
+                else{
+                  df <-df |> 
+                    select(-any_of(observation_available_names)) |>
+                    mutate(
+                      valor = NA
+                    ) |> 
+                    mutate(
+                      obs = as.character(observation_current),
+                      valor = as.numeric(valor)
+                    )
+                }
+                # Add results to data frame for all observations in each code
+                df_observations <- bind_rows(df_observations, df)
+              }
+              # Add results to data frame for all codes in each level
+              df_all <- bind_rows(df_observations, df_all)
+              
+              # If only one level and code were requested, it outputs the results directly
+              if (k == 1 & m == 1) {
+                result_list[[indicators_current]] <- df_all
+              } else {
+                # If more than one group OR code were requested, it adds the results to the existing ones
+                result_list[[indicators_current]] <-
+                  bind_rows(result_list[[indicators_current]], df_all) |>
+                  unique()
+              }
+              # Adds the group we retrieved to the list
+              success <- sort(c(success, l))
+            }
           }
-          # Adds the group we retrieved to the list
-          success <- sort(c(success, l))
-        }
       }
-      # # Runs the synthetic groups if requested and possible
-      # if (any(c("Distrito", "ACES", "ARS") %in% groups_chosen) & min(success) < 4) {
-      #   if (1 %in% success) {
-      #     level_names_success <- level_names_reference[1]
-      #   } else if (2 %in% success) {
-      #     level_names_success <- level_names_reference[2]
-      #   } else if (3 %in% success) {
-      #     level_names_success <- level_names_reference[3]
-      #   }
-      #   if ("Distrito" %in% groups_chosen) {
-      #     result_list[[indicators_current]] <- bind_rows(
-      #       result_list[[indicators_current]],
-      #       result_list[[indicators_current]] |>
-      #         # Adds the geographical information
-      #         left_join(geo_chosen,
-      #           by = c("geocod" = as.character(level_names_success)),
-      #           multiple = "first"
-      #         ) |>
-      #         # Groups the results
-      #         summarise(
-      #           geocod = distrito_2013_cod,
-      #           geodsg = distrito_2013,
-      #           valor = sum(valor),
-      #           obs = obs,
-      #           .by = c(obs, distrito_2013)) |>
-      #         select(geocod, geodsg, valor, obs) |>
-      #         unique()
-      #     )
-      #   } else if ("ACES" %in% groups_chosen) {
-      #     result_list[[indicators_current]] <- bind_rows(
-      #       result_list[[indicators_current]],
-      #       result_list[[indicators_current]] |>
-      #         # Adds the geographical information
-      #         left_join(geo_chosen,
-      #           by = c("geocod" = as.character(level_names_success)),
-      #           multiple = "first"
-      #         ) |>
-      #         # Groups the results
-      #         summarise(
-      #           geocod = aces_2022_cod,
-      #           geodsg = aces_2022,
-      #           valor = sum(valor),
-      #           obs = obs,
-      #           .by = c(obs, aces_2022)) |>
-      #         select(geocod, geodsg, valor, obs) |>
-      #         unique()
-      #     )
-      #   } else if ("ARS" %in% groups_chosen) {
-      #     result_list[[indicators_current]] <- bind_rows(
-      #       result_list[[indicators_current]],
-      #       result_list[[indicators_current]] |>
-      #         # Adds the geographical information
-      #         left_join(geo_chosen,
-      #           by = c("geocod" = as.character(level_names_success)),
-      #           multiple = "first"
-      #         ) |>
-      #         # Groups the results
-      #         summarise(
-      #           geocod = ars_2022_cod,
-      #           geodsg = ars_2022,
-      #           valor = sum(valor),
-      #           obs = obs,
-      #           .by = c(obs, ars_2022)) |>
-      #         select(geocod, geodsg, valor, obs) |>
-      #         unique()
-      #     )
-      #   }
-      # }
-    }
+      }
+      else{
+        # Extracts the data from  the INE API response
+        df_all <- data.frame()
+        results <- as.data.frame(all$Dados)
+        observation_available_names <- colnames(results)
+        observation_available <- length(observation_available_names)
+        # Checks if the requested number of observations is available
+        if (observation_requested > observation_available) {
+          observation_used <- observation_available
+        } else {
+          observation_used <- observation_requested
+        }
+        # Get names of the observations of interest
+        observation_used_names <- c(observation_available_names[(observation_available - observation_used + 1):(observation_available)])
+        # Set an empty result data frame for all observations in each code
+        df_observations <- data.frame()
+        # Loop over observations
+        for (observation_current in observation_used_names) {
+          # Remove everything except the observations we want
+          df <- results |>
+            unnest(!!sym(observation_current))
+          if("valor" %in% colnames(df)){
+            df <-df |> 
+              select(-any_of(observation_available_names)) |>
+              
+              mutate(
+                obs = as.character(observation_current),
+                valor = as.numeric(valor)
+              )
+          }
+          else{
+            df <-df |> 
+              select(-any_of(observation_available_names)) |>
+              mutate(
+                valor = NA
+              ) |> 
+              mutate(
+                obs = as.character(observation_current),
+                valor = as.numeric(valor)
+              )
+          }
+          # Add results to data frame for all observations in each code
+          df_observations <- bind_rows(df_observations, df)
+        }
+        # Add results to data frame for all codes in each level
+        df_all <- bind_rows(df_observations, df_all)
+        
+        success <- c(10)
+          for (y in 1:length(level_test)) {
+            if("Falso" %in% colnames(test[[y]]$Sucesso)){
+             next 
+            }else{
+             success <- sort(c(success,y))
+            }
+          }
+        combined_vector <- c(dicofre_2013, 
+                             municipio_2013, 
+                             municipio_2002, 
+                             nuts_3_2013, 
+                             nuts_3_2002, 
+                             nuts_2_2013, 
+                             nuts_1_2013, 
+                             pais)
+        
+        df_all <- df_all |>
+          filter(geocod %in% combined_vector)
+        
+        if((c("Freguesia") %in% groups_chosen|
+                   c("ACES") %in% groups_chosen|
+                   c("ULS") %in% groups_chosen|
+                   c("ARS") %in% groups_chosen|
+                   c("Distrito") %in% groups_chosen
+                   ) & (1 %in% success)){
+          geo_chosen <- geo_reference[[1]]
+          if(isFALSE(c("Município") %in% groups_chosen)){
+          df_all <- df_all |>
+            filter(!geocod %in% municipio_2013,!geocod %in% municipio_2002)}
+          if(isFALSE(c("NUTS III") %in% groups_chosen)){
+            df_all <- df_all |>
+              filter(!geocod %in% nuts_3_2013, !geocod %in% nuts_3_2002)}
+          if(isFALSE(c("NUTS II") %in% groups_chosen)){
+            df_all <- df_all |>
+              filter(!geocod %in% nuts_2_2013)}
+          if(isFALSE(c("NUTS I") %in% groups_chosen)){
+            df_all <- df_all |>
+              filter(!geocod %in% nuts_1_2013)}
+          if(isFALSE(c("País") %in% groups_chosen)){
+            df_all <- df_all |>
+              filter(!geocod %in% pais)}
+        }
+        if((c("Município") %in% groups_chosen|
+                     c("ACES") %in% groups_chosen|
+                     c("ULS") %in% groups_chosen|
+                     c("ARS") %in% groups_chosen|
+                     c("Distrito") %in% groups_chosen) & (2 %in% success)|min(success)==2){
+          geo_chosen <- geo_reference[[2]]
+          if(isFALSE(c("NUTS III") %in% groups_chosen)){
+            df_all <- df_all |>
+              filter(!geocod %in% nuts_3_2013, !geocod %in% nuts_3_2002)}
+          if(isFALSE(c("NUTS II") %in% groups_chosen)){
+            df_all <- df_all |>
+              filter(!geocod %in% nuts_2_2013)}
+          if(isFALSE(c("NUTS I") %in% groups_chosen)){
+            df_all <- df_all |>
+              filter(!geocod %in% nuts_1_2013)}
+          if(isFALSE(c("País") %in% groups_chosen)){
+            df_all <- df_all |>
+              filter(!geocod %in% pais)}
+        }
+        if(c("NUTS III") %in% groups_chosen & (4 %in% success)|min(success)==4){
+        if(isFALSE(c("NUTS II") %in% groups_chosen)){
+          df_all <- df_all |>
+            filter(!geocod %in% nuts_2_2013)}
+        if(isFALSE(c("NUTS I") %in% groups_chosen)){
+          df_all <- df_all |>
+            filter(!geocod %in% nuts_1_2013)}
+        if(isFALSE(c("País") %in% groups_chosen)){
+          df_all <- df_all |>
+            filter(!geocod %in% pais)}
+        }
+        if((c("NUTS II") %in% groups_chosen)& (6 %in% success)|min(success)==6){
+        if(isFALSE(c("NUTS I") %in% groups_chosen)){
+          df_all <- df_all |>
+            filter(!geocod %in% nuts_1_2013)}
+        if(isFALSE(c("País") %in% groups_chosen)){
+          df_all <- df_all |>
+            filter(!geocod %in% pais)}
+        }
+        if((c("NUTS I") %in% groups_chosen)& (7 %in% success)|min(success)==7){
+        if(isFALSE(c("País") %in% groups_chosen)){
+          df_all <- df_all |>
+            filter(!geocod %in% pais)}
+        }
+        result_list[[indicators_current]] <- df_all
+      }
+        # Runs the synthetic groups if requested and possible
+        if (any(c("Distrito", "ACES", "ARS", "ULS") %in% groups_chosen) & min(success) < 4) {
+          if (1 %in% success) {
+            level_names_success <- level_names_reference[1]
+          } else if (2 %in% success) {
+            level_names_success <- level_names_reference[2]
+          } else if (3 %in% success) {
+            level_names_success <- level_names_reference[3]
+          }
+          if ("Distrito" %in% groups_chosen) {
+            if(any(str_detect(colnames(result_list[[indicators_current]]), "dim"))){
+              if(sum(str_detect(colnames(result_list[[indicators_current]]), "dim"))== 2){
+                result_list[[indicators_current]] <- bind_rows(
+                  result_list[[indicators_current]],
+                  result_list[[indicators_current]] |>
+                    # Adds the geographical information
+                    left_join(geo_chosen,
+                              by = c("geocod" = as.character(level_names_success)),
+                              multiple = "first"
+                    ) |>
+                    # Groups the results
+                    summarise(
+                      geocod = distrito_2013_cod,
+                      geodsg = distrito_2013,
+                      valor = sum(valor,na.rm=TRUE),
+                      # obs = obs,
+                      .by = c(obs, distrito_2013, dim_3, dim_3_t)) |>
+                    select(geocod, geodsg, dim_3, dim_3_t, valor, obs) |>
+                    unique()
+                )}else if(sum(str_detect(colnames(result_list[[indicators_current]]), "dim"))== 4){
+                  result_list[[indicators_current]] <- bind_rows(
+                    result_list[[indicators_current]],
+                    result_list[[indicators_current]] |>
+                      # Adds the geographical information
+                      left_join(geo_chosen,
+                                by = c("geocod" = as.character(level_names_success)),
+                                multiple = "first"
+                      ) |>
+                      # Groups the results
+                      summarise(
+                        geocod = distrito_2013_cod,
+                        geodsg = distrito_2013,
+                        valor = sum(valor,na.rm=TRUE),
+                        # obs = obs,
+                        .by = c(obs, distrito_2013, dim_3, dim_3_t, dim_4, dim_4_t)) |>
+                      select(geocod, geodsg,dim_3, dim_3_t, dim_4, dim_4_t, valor, obs) |>
+                      unique())}
+              else if(sum(str_detect(colnames(result_list[[indicators_current]]), "dim"))== 6){
+                result_list[[indicators_current]] <- bind_rows(
+                  result_list[[indicators_current]],
+                  result_list[[indicators_current]] |>
+                    # Adds the geographical information
+                    left_join(geo_chosen,
+                              by = c("geocod" = as.character(level_names_success)),
+                              multiple = "first"
+                    ) |>
+                    # Groups the results
+                    summarise(
+                      geocod = distrito_2013_cod,
+                      geodsg = distrito_2013,
+                      valor = sum(valor,na.rm=TRUE),
+                      # obs = obs,
+                      .by = c(obs, distrito_2013, dim_3, dim_3_t, dim_4, dim_4_t, dim_5, dim_5_t)) |>
+                    select(geocod, geodsg,dim_3, dim_3_t, dim_4, dim_4_t, dim_5, dim_5_t, valor, obs) |>
+                    unique())}
+            }else{ result_list[[indicators_current]] <- bind_rows(
+              result_list[[indicators_current]],
+              result_list[[indicators_current]] |>
+                # Adds the geographical information
+                left_join(geo_chosen,
+                          by = c("geocod" = as.character(level_names_success)),
+                          multiple = "first"
+                ) |>
+                # Groups the results
+                summarise(
+                  geocod = distrito_2013_cod,
+                  geodsg = distrito_2013,
+                  valor = sum(valor,na.rm=TRUE),
+                  # obs = obs,
+                  .by = c(obs, distrito_2013)) |>
+                # select(geocod, geodsg, valor, obs) |>
+                unique())}
+          } else if ("ACES" %in% groups_chosen) {
+            if(any(str_detect(colnames(result_list[[indicators_current]]), "dim"))){
+              if(sum(str_detect(colnames(result_list[[indicators_current]]), "dim"))== 2){
+                result_list[[indicators_current]] <- bind_rows(
+                  result_list[[indicators_current]],
+                  result_list[[indicators_current]] |>
+                    # Adds the geographical information
+                    left_join(geo_chosen,
+                              by = c("geocod" = as.character(level_names_success)),
+                              multiple = "first"
+                    ) |>
+                    # Groups the results
+                    summarise(
+                      geocod = aces_2022_cod,
+                      geodsg = aces_2022,
+                      valor = sum(valor, na.rm = TRUE),
+                      # obs = obs,
+                      .by = c(obs, aces_2022, dim_3, dim_3_t)
+                    ) |>
+                    select(geocod, geodsg, dim_3, dim_3_t, valor, obs) |>
+                    unique()
+                )}else if(sum(str_detect(colnames(result_list[[indicators_current]]), "dim"))== 4){
+                  result_list[[indicators_current]] <- bind_rows(
+                    result_list[[indicators_current]],
+                    result_list[[indicators_current]] |>
+                      # Adds the geographical information
+                      left_join(geo_chosen,
+                                by = c("geocod" = as.character(level_names_success)),
+                                multiple = "first"
+                      ) |>
+                      # Groups the results
+                      summarise(
+                        geocod = aces_2022_cod,
+                        geodsg = aces_2022,
+                        valor = sum(valor, na.rm = TRUE),
+                        # obs = obs,
+                        .by = c(obs, aces_2022, dim_3, dim_3_t, dim_4, dim_4_t)
+                      ) |>
+                      select(geocod, geodsg,dim_3, dim_3_t, dim_4, dim_4_t, valor, obs) |>
+                      unique())}
+              else if(sum(str_detect(colnames(result_list[[indicators_current]]), "dim"))== 6){
+                result_list[[indicators_current]] <- bind_rows(
+                  result_list[[indicators_current]],
+                  result_list[[indicators_current]] |>
+                    # Adds the geographical information
+                    left_join(geo_chosen,
+                              by = c("geocod" = as.character(level_names_success)),
+                              multiple = "first"
+                    ) |>
+                    # Groups the results
+                    summarise(
+                      geocod = aces_2022_cod,
+                      geodsg = aces_2022,
+                      valor = sum(valor, na.rm = TRUE),
+                      # obs = obs,
+                      # .by = c(obs, aces_2022)
+                      .by = c(obs, aces_2022, dim_3, dim_3_t, dim_4, dim_4_t, dim_5, dim_5_t)
+                    ) |>
+                    select(geocod, geodsg,dim_3, dim_3_t, dim_4, dim_4_t, dim_5, dim_5_t, valor, obs) |>
+                    unique())}
+            }else{ result_list[[indicators_current]] <- bind_rows(
+              result_list[[indicators_current]],
+              result_list[[indicators_current]] |>
+                # Adds the geographical information
+                left_join(geo_chosen,
+                          by = c("geocod" = as.character(level_names_success)),
+                          multiple = "first"
+                ) |>
+                # Groups the results
+                summarise(
+                  geocod = aces_2022_cod,
+                  geodsg = aces_2022,
+                  valor = sum(valor, na.rm = TRUE),
+                  # obs = obs,
+                  .by = c(obs, aces_2022)
+                ) |>
+                dplyr::select(geocod, geodsg, valor, obs) |>
+                unique())}
+          }else if ("ULS" %in% groups_chosen) {
+            if(any(str_detect(colnames(result_list[[indicators_current]]), "dim"))){
+              if(sum(str_detect(colnames(result_list[[indicators_current]]), "dim"))== 2){
+                result_list[[indicators_current]] <- bind_rows(
+                  result_list[[indicators_current]],
+                  result_list[[indicators_current]] |>
+                    # Adds the geographical information
+                    left_join(geo_chosen,
+                              by = c("geocod" = as.character(level_names_success)),
+                              multiple = "first"
+                    ) |>
+                    # Groups the results
+                    summarise(
+                      geocod = "NA",
+                      geodsg = uls_2023,
+                      valor = sum(valor, na.rm = TRUE),
+                      # obs = obs,
+                      .by = c(obs, uls_2023, dim_3, dim_3_t)
+                    ) |>
+                    select(geocod, geodsg, dim_3, dim_3_t, valor, obs) |>
+                    unique()
+                )}else if(sum(str_detect(colnames(result_list[[indicators_current]]), "dim"))== 4){
+                  result_list[[indicators_current]] <- bind_rows(
+                    result_list[[indicators_current]],
+                    result_list[[indicators_current]] |>
+                      # Adds the geographical information
+                      left_join(geo_chosen,
+                                by = c("geocod" = as.character(level_names_success)),
+                                multiple = "first"
+                      ) |>
+                      # Groups the results
+                      summarise(
+                        geocod = "NA",
+                        geodsg = uls_2023,
+                        valor = sum(valor, na.rm = TRUE),
+                        # obs = obs,
+                        .by = c(obs, uls_2023, dim_3, dim_3_t, dim_4, dim_4_t)
+                      ) |>
+                      select(geocod, geodsg,dim_3, dim_3_t, dim_4, dim_4_t, valor, obs) |>
+                      unique())}
+              else if(sum(str_detect(colnames(result_list[[indicators_current]]), "dim"))== 6){
+                result_list[[indicators_current]] <- bind_rows(
+                  result_list[[indicators_current]],
+                  result_list[[indicators_current]] |>
+                    # Adds the geographical information
+                    left_join(geo_chosen,
+                              by = c("geocod" = as.character(level_names_success)),
+                              multiple = "first"
+                    ) |>
+                    # Groups the results
+                    summarise(
+                      geocod = "NA",
+                      geodsg = uls_2023,
+                      valor = sum(valor, na.rm = TRUE),
+                      # obs = obs,
+                      # .by = c(obs, aces_2022)
+                      .by = c(obs, uls_2023, dim_3, dim_3_t, dim_4, dim_4_t, dim_5, dim_5_t)
+                    ) |>
+                    select(geocod, geodsg,dim_3, dim_3_t, dim_4, dim_4_t, dim_5, dim_5_t, valor, obs) |>
+                    unique())}
+            }else{ result_list[[indicators_current]] <- bind_rows(
+              result_list[[indicators_current]],
+              result_list[[indicators_current]] |>
+                # Adds the geographical information
+                left_join(geo_chosen,
+                          by = c("geocod" = as.character(level_names_success)),
+                          multiple = "first"
+                ) |>
+                # Groups the results
+                summarise(
+                  geocod = "NA",
+                  geodsg = uls_2023,
+                  valor = sum(valor, na.rm = TRUE),
+                  # obs = obs,
+                  .by = c(obs, uls_2023)
+                ) |>
+                dplyr::select(geocod, geodsg, valor, obs) |>
+                unique())}
+          } else if ("ARS" %in% groups_chosen) {
+            if(any(str_detect(colnames(result_list[[indicators_current]]), "dim"))){
+              if(sum(str_detect(colnames(result_list[[indicators_current]]), "dim"))== 2){
+                result_list[[indicators_current]] <- bind_rows(
+                  result_list[[indicators_current]],
+                  result_list[[indicators_current]] |>
+                    # Adds the geographical information
+                    left_join(geo_chosen,
+                              by = c("geocod" = as.character(level_names_success)),
+                              multiple = "first"
+                    ) |>
+                    # Groups the results
+                    summarise(
+                      geocod = ars_2022_cod,
+                      geodsg = ars_2022,
+                      valor = sum(valor, na.rm=TRUE),
+                      # obs = obs,
+                      .by = c(obs, ars_2022, dim_3, dim_3_t)) |>
+                    select(geocod, geodsg, dim_3, dim_3_t, valor, obs) |>
+                    unique()
+                )}else if(sum(str_detect(colnames(result_list[[indicators_current]]), "dim"))== 4){
+                  result_list[[indicators_current]] <- bind_rows(
+                    result_list[[indicators_current]],
+                    result_list[[indicators_current]] |>
+                      # Adds the geographical information
+                      left_join(geo_chosen,
+                                by = c("geocod" = as.character(level_names_success)),
+                                multiple = "first"
+                      ) |>
+                      # Groups the results
+                      summarise(
+                        geocod = ars_2022_cod,
+                        geodsg = ars_2022,
+                        valor = sum(valor, na.rm=TRUE),
+                        # obs = obs,
+                        .by = c(obs, ars_2022, dim_3, dim_3_t, dim_4, dim_4_t)) |>
+                      select(geocod, geodsg,dim_3, dim_3_t, dim_4, dim_4_t, valor, obs) |>
+                      unique())}
+              else if(sum(str_detect(colnames(result_list[[indicators_current]]), "dim"))== 6){
+                result_list[[indicators_current]] <- bind_rows(
+                  result_list[[indicators_current]],
+                  result_list[[indicators_current]] |>
+                    # Adds the geographical information
+                    left_join(geo_chosen,
+                              by = c("geocod" = as.character(level_names_success)),
+                              multiple = "first"
+                    ) |>
+                    # Groups the results
+                    summarise(
+                      geocod = ars_2022_cod,
+                      geodsg = ars_2022,
+                      valor = sum(valor, na.rm=TRUE),
+                      # obs = obs,
+                      .by = c(obs, ars_2022, dim_3, dim_3_t, dim_4, dim_4_t, dim_5, dim_5_t)) |>
+                    select(geocod, geodsg,dim_3, dim_3_t, dim_4, dim_4_t, dim_5, dim_5_t, valor, obs) |>
+                    unique())}
+            }else{ result_list[[indicators_current]] <- bind_rows(
+              result_list[[indicators_current]],
+              result_list[[indicators_current]] |>
+                # Adds the geographical information
+                left_join(geo_chosen,
+                          by = c("geocod" = as.character(level_names_success)),
+                          multiple = "first"
+                ) |>
+                # Groups the results
+                # Groups the results
+                summarise(
+                  geocod = ars_2022_cod,
+                  geodsg = ars_2022,
+                  valor = sum(valor, na.rm=TRUE),
+                  # obs = obs,
+                  .by = c(obs, ars_2022)) |>
+                select(geocod, geodsg, valor, obs) |>
+                unique())}
+          }
+        }
+      if(!"valor" %in% colnames(result_list[[indicators_current]])){
+        result_list[[indicators_current]] <- data.frame(geocod=0, geodsg=0, valor=0,obs=0, year=0)
+      }
+      }
     return(result_list)
   }
 #
 chosen_group_options <- NULL
 # Define UI for application that draws a histogram
-thematic::thematic_shiny(font_google("Lato"))
+# thematic::thematic_shiny(font_google("Lato"))
 
-ui <- navbarPage(
+ui <- fluidPage(
+  # Include custom CSS
+  tags$head(
+    tags$style(HTML("
+    /* Style for larger screens */
+    .responsive-row {
+      display: flex; /* Establish flex container */
+      flex-wrap: wrap; /* Allow wrapping if necessary */
+    }
+    .responsive-row .col-sm-4 {
+      width: 33.33%; /* Each column takes up one-third of the space */
+      box-sizing: border-box; /* Include padding and border in the element's total width and height */
+    }
+
+    /* Style for smaller screens */
+    @media (max-width: 800px) {
+      .responsive-row .col-sm-4 {
+        width: 100%; /* Each column takes full width on small screens */
+        float: none; /* Float is not needed with flexbox */
+      }
+    }
+  ")),
+  ),
+  navbarPage(
   theme = bs_theme(base_font = font_google("Lato"),
-  font_scale = -0.5, `enable-gradients` = TRUE, `enable-shadows` = TRUE
-  ,spacer = "0.5rem", bootswatch = "minty"),
+  font_scale = -0.8, `enable-gradients` = TRUE, `enable-shadows` = TRUE
+  ,spacer = "0.3rem", bootswatch = "minty"),
   # theme = bs_theme(), 
   # Change theme at will must activate bs_themer() in server
-  "Extrator INE v0.3",
-  nav(
+  "Extrator INE v0.4",
+  nav_panel(
     "Extração de dados",
     useShinyjs(),
     fluidRow(
+      class = "responsive-row",
       column(
-        width = 2,
-        align = "right",
+        width = 4,
+        align = "left",
         height = 60,
         imageOutput("sns_img1", height = "60px")
       ),
       column(
-        width = 2,
-        align = "right",
+        width = 4,
+        align = "left",
         height = 60,
         imageOutput("dgs_img1", height = "60px")
       ),
       column(
-        width = 3,
-        align = "right",
+        width = 4,
+        align = "left",
         height = 60,
         imageOutput("ine_img1", height = "60px")
       )
@@ -421,16 +868,18 @@ ui <- navbarPage(
           min = 1,
           max = 20,
           value = 1
-        ),
-        p("Se o número de observações pedidas não estiver disponível, será extraído o máximo possível."),
+        ) |> tooltip("Se não houver dados do número pedido, é extraído o máximo."),
+        # p("Se não houver dados do número pedido, é extraído o máximo."),
+        actionButton("go", "Submeter", class = "btn-primary"),
+        actionButton("stop", "Reiniciar", class = "btn-primary"),
         # Search bar for indicator
         selectizeInput(
           "indicators_search",
-          "Selecionar ou Pesquisar indicadores:",
+          "Selecionar indicadores:",
           choices = NULL,
           multiple = TRUE
-        ),
-        p("Lista de indicadores atualizada a 2023-03-06"),
+        ) |> tooltip("Indicadores atualizados em 2023-03-06"),
+        # p("Indicadores atualizados em 2023-03-06"),
         # Search bar for desagregação
         selectInput(
           "chosen_group_dropdown",
@@ -444,26 +893,34 @@ ui <- navbarPage(
             "NUTS I",
             "País",
             "ACES",
+            "ULS",
             "ARS"
           )
+        ) |> tooltip(
+          "Se não houver dados do pedido, será extraído o mais próximo possível."
         ),
-        p(
-          "Se o nível pedido não estiver disponível, será extraído o mais próximo possível."
-        ),
+        # p(
+        #   "Se não houver dados do pedido, será extraído o mais próximo possível."
+        # ),
+        checkboxInput("select_all_checkbox", "Selecionar todos", FALSE),
         # Dropdown for additional desagregação options
         uiOutput("chosen_items_search"),
+        checkboxInput("individual_checkbox",
+                      "Extração individual",
+                      FALSE)|> tooltip("Aumenta tempo de extração mas útil em indicadores com múltiplas dimensões com extração completa que não inclua níveis mais pequenos."),
+        # p("Aumenta tempo de extração mas útil em indicadores com múltiplas dimensões com extração completa que não inclua níveis mais pequenos."),
         checkboxInput(
           "other_groups_checkbox",
           "Agrupar resultados por outros níveis",
           FALSE
         ),
         uiOutput("other_groups_search"),
+        checkboxInput("graficos_checkbox",
+                      "Fazer Gráficos",
+                      FALSE),
         checkboxInput("meta_checkbox",
                       "Pedir Metainformação",
                       FALSE),
-        actionButton("go", "Submeter", class = "btn-primary"),
-        br(),
-        br(),
         checkboxInput(
           "show_debug",
           "Painel debug",
@@ -475,29 +932,29 @@ ui <- navbarPage(
         uiOutput("debug_panel_checkbox"),
         h2("Dados Recolhidos pelo Extractor"),
         uiOutput("error"),
-        # withSpinner(uiOutput("loading"),type = 5, color = "#78C2AD"),
-        withSpinner(uiOutput("results_table"),type = 5, color = "#78C2AD")
+        withSpinner(uiOutput("results_table"),type = 5, color = "#78C2AD", hide.ui = T)
       ,width = 9)
     )
   ),
-  nav(
+  nav_panel(
     "Sobre",
     fluidRow(
+      class = "responsive-row",
       column(
         width = 2,
-        align = "right",
+        align = "left",
         height = 60,
         imageOutput("sns_img2", height = "60px")
       ),
       column(
         width = 2,
-        align = "right",
+        align = "left",
         height = 60,
         imageOutput("dgs_img2", height = "60px")
       ),
       column(
         width = 3,
-        align = "right",
+        align = "left",
         height = 60,
         imageOutput("ine_img2", height = "60px")
       )
@@ -511,17 +968,40 @@ ui <- navbarPage(
       ),
       mainPanel(
         h3("Próximas melhorias"),
-        p("- Corrigir o cálculo dos indicadores para distrito, ACES, ARS quando há múltiplas dimensões;"),
-        p("- Corrigir o cálculo dos indicadores para distrito, ACES, ARS quando não são contagens;"),
+        p("- Corrigir o cálculo dos indicadores para distrito, ACES, ULS ARS quando não são contagens;"),
+        p("- Remoção das variáveis para cálculo de dimensões não administrativas do INE (Distrito, ACES e ARS) - Para já deixo como validação"),
         p("- Automatizar a procura dos indicadores disponíveis;"),
-        p("- Permitir a manipulação de variáveis;"),
-        p("- Comentar o código."),
+        p("- Melhoria na manipulação de variáveis e visualizações;"),
+        p("- Indicadores base em datasets base para evitar extração INE constante."),
         br(),
         h2("Changelog"),
+        h3("V0.42"),
+        h4("2024-03-27"),
+        p("- Otimização de pesquisa de indicadores contínua;"),
+        p("- Ponderada remoção do botão de reiniciar - manter para já"),
+        h3("V0.4"),
+        h4("2023-12-08"),
+        p("- Otimização de indicadores pequenos para extração completa;"),
+        p("- Dada opção para extração por ULS"),
+        p("- Dada opção para extração individual"),
+        p("- Dada opção para criação de gráficos"),
+        h3("V0.3.6"),
+        h4("2023-05-17"),
+        p("- Corrigir o cálculo dos indicadores para distrito, ACES, ARS quando há múltiplas dimensões (até 5 dimensões);"),
+        p("- Adicionado filtro em tabela para manipulação dos resultados;"),
+        p("- Otimização do código dos gráficos"),
+        p("- Criação de botão para selecionar tudo."),
+        p("- Comentado código."),
+        br(),
+        h3("V0.3.1"),
+        h4("2023-03-21"),
+        p("- Melhoria da adaptação das visualizações;"),
+        br(),
         h3("V0.3"),
         h4("2023-03-18"),
         p("- Melhorias visuais"),
         p("- Feedback ao utilizador de funcionamento da função principal"),
+        p("- Visualização dos dados recolhidos"),
         br(),
         h3("V0.2.2"),
         h4("2023-03-16"),
@@ -539,10 +1019,17 @@ ui <- navbarPage(
         h4("2023-03-14"),
         p("- Redução do tempo entre chamadas ao servidor;"),
         p("- Otimização do número de uniões dos resultados recebidos;"),
-        p("- Correção de erro na listagem dos municípios.")
+        p("- Correção de erro na listagem dos municípios."),
+        h2("Bugs Conhecidos"),
+        h4("Em 2023-03-17"),
+        p("- Problema na escolha de várias agregações superiores e inferiores que não permite filtro só do que foi pedido;"),
+        # p("- Botão de submissão apenas respeitado na primeira submissão. O programa não respeita o botão após, necessidade de criar botão reiniciar;"),
+        p("- Extrações de todas as freguesias do país em múltiplos indicadores leva a quebra do sistema.")
+        #p("- Extrações do indicador do país num indicador que não o tem leva a quebra do sistema.- Resolvido")
       )
     )
   )
+)
 )
 #
 server <- function(input, output, session) {
@@ -610,12 +1097,20 @@ server <- function(input, output, session) {
     options = list(
       placeholder = "Barra de Pesquisa",
       create = FALSE,
-      maxOptions = 15
+      maxOptions = 30
     ),
     server = TRUE
   )
   
   chosen_group_options <- reactiveValues(available_items = NULL)
+  
+  values <- reactiveValues(select_all = FALSE)
+  
+  selected_input <- reactiveVal()
+  # Update selected_input when input$chosen_group_dropdown or values$select_all changes
+  observeEvent(c(input$chosen_group_dropdown, values$select_all), {
+    selected_input(c(input$chosen_group_dropdown, values$select_all))
+  })
   # Retrieves the list of available items for the chosen geographic level
   # Update chosen_group_options() whenever input$chosen_group_dropdown changes
   observeEvent(input$chosen_group_dropdown, {
@@ -635,37 +1130,72 @@ server <- function(input, output, session) {
       chosen_group_options$available_items <- geo_lookup$pais
     } else if (input$chosen_group_dropdown == "ACES") {
       chosen_group_options$available_items <- geo_lookup$aces_2022
+    }else if (input$chosen_group_dropdown == "ULS") {
+      chosen_group_options$available_items <- geo_lookup$uls_2023
     } else if (input$chosen_group_dropdown == "ARS") {
       chosen_group_options$available_items <- geo_lookup$ars_2022
     }
   })
   
-
-  # Render the dynamic dropdown menu with the available items for the chosen geographic level
   output$chosen_items_search <- renderUI({
     if (!is.null(chosen_group_options$available_items)) {
       selectizeInput(
         "chosen_items",
         "Selecionar itens a incluir:",
         choices = NULL,
-        multiple = TRUE,
+        multiple = TRUE
       )
     }
   })
-  
-  # Update the dropdown menu whenever available_items changes
-  observe({
-    updateSelectizeInput(
-      session,
-      "chosen_items",
-      choices = chosen_group_options$available_items,
-      options = list(
-        placeholder = "Barra de pesquisa",
-        create = FALSE
-      ),
-      server = TRUE
-    )
+  # Render the dynamic dropdown menu with the available items for the chosen geographic level
+  observeEvent(input$select_all_checkbox,{
+    if (input$select_all_checkbox) {
+      values$select_all <- TRUE
+    } else {
+      values$select_all <- FALSE
+    }
   })
+
+  observeEvent(selected_input(),{
+    if (values$select_all==TRUE) {
+      updateSelectizeInput(
+        session,
+        "chosen_items",
+        choices = chosen_group_options$available_items,
+        options = list(
+                # placeholder = "Barra de pesquisa",
+                create = FALSE
+              ),
+        selected = chosen_group_options$available_items,
+        server = TRUE
+      )
+    } else {
+      updateSelectizeInput(
+            session,
+            "chosen_items",
+            choices = chosen_group_options$available_items,
+            options = list(
+              placeholder = "Barra de pesquisa",
+              create = FALSE
+            ),
+            server = TRUE
+          )
+    }
+  })
+  # Update the dropdown menu whenever available_items changes
+  # observe({
+  #   updateSelectizeInput(
+  #     session,
+  #     "chosen_items",
+  #     choices = chosen_group_options$available_items,
+  #     options = list(
+  #       placeholder = "Barra de pesquisa",
+  #       create = FALSE
+  #     ),
+  #     server = TRUE
+  #   )
+  # })
+  # 
   
   # Creates a debug panel with the codes in the current selection
   output$debug_panel_checkbox <- renderUI({
@@ -708,27 +1238,33 @@ server <- function(input, output, session) {
       other_groups <-
         c(
           "Município",
-          # "Distrito",
+          "Distrito",
           "NUTS III",
           "NUTS II",
           "NUTS I",
-          "País"
+          "País",
+          "ACES",
+          "ULS"
         )
     } else if (input$chosen_group_dropdown == "Município") {
       other_groups <-
         c(
           "Freguesia",
-          # "Distrito",
+          "Distrito",
           "NUTS III",
           "NUTS II",
           "NUTS I",
-          "País"
+          "País",
+          "ACES",
+          "ULS",
+          "ARS"
         )
     } else if (input$chosen_group_dropdown == "Distrito") {
       other_groups <-
         c(
           "Freguesia",
-          "Município" # ,
+          "Município",
+          "ARS"# ,
           # "NUTS III",
           # "NUTS II",
           # "NUTS I",
@@ -739,7 +1275,7 @@ server <- function(input, output, session) {
         c(
           "Freguesia",
           "Município",
-          # "Distrito",
+          "Distrito",
           "NUTS II",
           "NUTS I",
           "País"
@@ -749,7 +1285,7 @@ server <- function(input, output, session) {
         c(
           "Freguesia",
           "Município",
-          # "Distrito",
+          "Distrito",
           "NUTS III",
           "NUTS I",
           "País"
@@ -779,12 +1315,12 @@ server <- function(input, output, session) {
         c(
           "Freguesia",
           "Município",
-          # "Distrito",
+          #"Distrito",
           "NUTS III",
           "NUTS II",
           "NUTS I",
-          "País" # ,
-          # "ARS"
+          "País", # ,
+          "ARS"
         )
     } else if (input$chosen_group_dropdown == "ARS") {
       other_groups <-
@@ -796,7 +1332,8 @@ server <- function(input, output, session) {
           "NUTS II",
           "NUTS I",
           "País",
-          "ACES"
+          "ACES",
+          "ULS"
         )
     }
     return(other_groups)
@@ -818,6 +1355,7 @@ server <- function(input, output, session) {
   })
   # Create a reactive function for the focused area codes
   filtered_area <- reactive({
+    if(is.null(input$other_groups_list)|(!("Distrito"%in%input$other_groups_list)&!("ACES"%in%input$other_groups_list)&!("ARS"%in%input$other_groups_list)&!("ULS"%in%input$other_groups_list))){
     filtered <-
       geo_lookup |> filter(chosen_group_options$available_items %in% input$chosen_items)
     # Sets lists of codes for debug panel
@@ -838,7 +1376,142 @@ server <- function(input, output, session) {
         f_municipio_2002 = f_municipio_2002
       )
     )
-  })
+    }else if("ARS" %in% input$other_groups_list){
+      filtered <-
+        geo_lookup |> filter(chosen_group_options$available_items %in% input$chosen_items)
+      extra <- unique(filtered$ars_2022)
+      extra1 <- unique(filtered$ars_2022_cod)
+      # if("Distrito"%in% input$other_groups_list){
+      #   extra2 <- unique(filtered$distrito_2013_cod)}else{
+      #     extra2 <- c()
+      #   }
+      # if("ACES" %in% input$other_groups_list){
+      #   extra3 <- unique(filtered$aces_2022_cod)}else{
+      #     extra3 <- c()
+      #   }
+      filtered <-
+        geo_lookup |> filter(ars_2022 %in% extra)
+      # Sets lists of codes for debug panel
+      f_freguesia <- filtered |>
+        pull(dicofre_2013) |>
+        unique()
+      f_municipio_2013 <- filtered |>
+        pull(municipio_2013_cod) |>
+        unique()
+      f_municipio_2002 <- filtered |>
+        pull(municipio_2002_cod) |>
+        unique()
+      return(
+        list(
+          filtered_table = filtered,
+          f_freguesia = f_freguesia,
+          f_municipio_2013 = f_municipio_2013,
+          f_municipio_2002 = f_municipio_2002,
+          extra1=extra1
+          # extra2=extra2,
+          # extra3=extra3
+        )
+      )
+    }else if("Distrito"%in%input$other_groups_list){
+      filtered <-
+        geo_lookup |> filter(chosen_group_options$available_items %in% input$chosen_items)
+      extra <- unique(filtered$distrito_2013)
+      extra1 <- unique(filtered$distrito_2013_cod)
+      # if("ARS"%in%input$other_groups_list){
+      #   extra2 <- unique(filtered$ars_2022_cod)}else{extra2 <- c()        }
+      # if("ACES"%in%input$other_groups_list){
+      #   extra3 <- unique(filtered$aces_2022_cod)}else{extra3 <- c()        }
+      filtered <-
+        geo_lookup |> filter(distrito_2013 %in% extra)
+      # Sets lists of codes for debug panel
+      f_freguesia <- filtered |>
+        pull(dicofre_2013) |>
+        unique()
+      f_municipio_2013 <- filtered |>
+        pull(municipio_2013_cod) |>
+        unique()
+      f_municipio_2002 <- filtered |>
+        pull(municipio_2002_cod) |>
+        unique()
+      
+      return(
+        list(
+          filtered_table = filtered,
+          f_freguesia = f_freguesia,
+          f_municipio_2013 = f_municipio_2013,
+          f_municipio_2002 = f_municipio_2002,
+          extra1=extra1
+          # extra2=extra2,
+          # extra3=extra3
+        )
+      )
+  }else if("ACES"%in%input$other_groups_list){
+    filtered <-
+      geo_lookup |> filter(chosen_group_options$available_items %in% input$chosen_items)
+    extra <- unique(filtered$aces_2022)
+    extra1 <- unique(filtered$aces_2022_cod)
+    # if("ARS"%in%input$other_groups_list){
+    #   extra2 <- unique(filtered$ars_2022_cod)}else{extra2 <- c()        }
+    # if("Distrito"%in%input$other_groups_list){
+    #   extra3 <- unique(filtered$distrito_2013_cod)}else{extra3 <- c()        }
+    filtered <-
+      geo_lookup |> filter(aces_2022 %in% extra)
+    # Sets lists of codes for debug panel
+    f_freguesia <- filtered |>
+      pull(dicofre_2013) |>
+      unique()
+    f_municipio_2013 <- filtered |>
+      pull(municipio_2013_cod) |>
+      unique()
+    f_municipio_2002 <- filtered |>
+      pull(municipio_2002_cod) |>
+      unique()
+    return(
+      list(
+        filtered_table = filtered,
+        f_freguesia = f_freguesia,
+        f_municipio_2013 = f_municipio_2013,
+        f_municipio_2002 = f_municipio_2002,
+        extra1=extra1
+        # extra2=extra2,
+        # extra3=extra3
+      )
+    )
+    
+  }else if("ULS"%in%input$other_groups_list){
+    filtered <-
+      geo_lookup |> filter(chosen_group_options$available_items %in% input$chosen_items)
+    extra <- unique(filtered$uls_2023)
+    # extra1 <- unique(filtered$aces_2022_cod)
+    # if("ARS"%in%input$other_groups_list){
+    #   extra2 <- unique(filtered$ars_2022_cod)}else{extra2 <- c()        }
+    # if("Distrito"%in%input$other_groups_list){
+    #   extra3 <- unique(filtered$distrito_2013_cod)}else{extra3 <- c()        }
+    filtered <-
+      geo_lookup |> filter(uls_2023 %in% extra)
+    # Sets lists of codes for debug panel
+    f_freguesia <- filtered |>
+      pull(dicofre_2013) |>
+      unique()
+    f_municipio_2013 <- filtered |>
+      pull(municipio_2013_cod) |>
+      unique()
+    f_municipio_2002 <- filtered |>
+      pull(municipio_2002_cod) |>
+      unique()
+    return(
+      list(
+        filtered_table = filtered,
+        f_freguesia = f_freguesia,
+        f_municipio_2013 = f_municipio_2013,
+        f_municipio_2002 = f_municipio_2002,
+        extra1="NA"
+        # extra2=extra2,
+        # extra3=extra3
+      )
+    )
+    
+  }})
   # Create a reactive function to ge the chosen indicator codes
   filtered_indicators <- reactive({
     f_indicators <- indicators |>
@@ -871,99 +1544,132 @@ server <- function(input, output, session) {
   })
   #
   result_list_reactive <- reactiveVal()
+
   meta_list_reactive <- reactiveVal()
   #
   dimmension_chosen <- reactiveVal()
+
+  result_list_processed <- eventReactive(input$go, {
+        result_list <- result_list
+    if (length(filtered_indicators()) != 0 & nrow(filtered_area()$filtered_table) != 0) {
+      # Replace this with your actual data fetching function
+      result_list_updated <- ine.get(indicators = filtered_indicators(),selected_areas = filtered_area()$filtered_table, observation_requested = input$observation_slider,result_list = result_list,
+                                     geo_reference = geo_reference,
+                                     groups_chosen = input$chosen_group_dropdown,
+                                     groups_other = input$other_groups_list,
+                                     individual = input$individual_checkbox
+      )
+      return(result_list_reactive(result_list_updated))
+      dimmension_chosen(c(input$other_groups_list, input$chosen_group_dropdown))
+    } else {
+      # Enable inputs
+      NULL
+    } 
+  })
+  
+meta_list_processed <- eventReactive(input$go, {
+     meta_list <- meta_list
+    if(input$meta_checkbox) {
+      # Replace this with your actual metadata fetching function
+        meta_list_updated <- ine.meta(
+          indicators = filtered_indicators(),
+          meta_list = meta_list
+        )
+        return(meta_list_reactive(meta_list_updated))
+    } else {
+      NULL
+    }
+  }, ignoreNULL = TRUE)
   
   output$results_table <- NULL
   #
+observeEvent(input$stop,{
+  output$results_table <- NULL
+}, ignoreNULL = TRUE)
+
 observeEvent(input$go,{
-    # Disable inputs
-    shinyjs::disable(selector = "input")
-    shinyjs::disable(selector = "select")
-    shinyjs::disable(selector = "button")
-    result_list <- result_list
-    meta_list <- meta_list
-    # Extract data from INE using the inputs from the UI
-    if (length(filtered_indicators()) != 0 &
-      nrow(filtered_area()$filtered_table) != 0) {
-      # Render the tabs based on the reactive value
-      output$results_table <- renderUI({
-        result_list_updated <- ine.get(indicators = filtered_indicators(),selected_areas = filtered_area()$filtered_table, observation_requested = input$observation_slider,result_list = result_list,
-                                       geo_reference = geo_reference,
-                                       groups_chosen = input$chosen_group_dropdown,
-                                       groups_other = input$other_groups_list
-        )
-        result_list_reactive(result_list_updated)
-        dimmension_chosen(c(input$other_groups_list, input$chosen_group_dropdown))
-        
-        output$error <- NULL
-        # Get the items from result_list_reactive
-        items <- names(result_list_reactive())
-        # Create a list of tabPanels with dataTables and downloadButtons
-        tabs <- lapply(items, function(item) {
-          full_name <- indicators$designacao[indicators$codigo_de_difusao == item]
-          title <-
-            substr(indicators$designacao[indicators$codigo_de_difusao == item], 1, 20)
-          if (length(full_name) == 0) {
-            full_name <- item
-          } else {
-            full_name <- full_name[1]
-          }
-          tabPanel(
-            title,
-            # set tooltip with full name
-            h4(strong(full_name)),
-            DTOutput(paste0(item, "_table")),
-            downloadButton(paste0(item, "_download"), paste0(item, ".csv")),
-            if(input$meta_checkbox == TRUE){
-              downloadButton(paste0(item,"meta", "_download"), paste0(item,"meta",".csv"))
-            }
-          )
-        })
-        # Return a tabsetPanel with the tabs
-        do.call(tabsetPanel, tabs)
-      })
-    } else if (length(filtered_indicators()) == 0) {
-      output$error <- renderUI({
-        tagList(
-          br(),
-          h1(strong("Não foi pedido nenhum indicador")),
-          br()
-        )
-      })
-    } else {
-      output$error <- renderUI({
-        tagList(
-          br(),
-          h1(strong(
-            "Não foi pedida nenhuma desagregação"
-          )),
-          br()
-        )
-      })
-    }
-    if(input$meta_checkbox == TRUE){
-      meta_list_updated <- ine.meta(
-        indicators = filtered_indicators(),
-        meta_list = meta_list
+  output$error <- renderUI({
+   if (length(filtered_indicators()) == 0) {
+      tagList(
+        br(),
+        h1(strong("Não foi pedido nenhum indicador")),
+        br()
       )
-      meta_list_reactive(meta_list_updated)
-    }
-    # Enable inputs
-    shinyjs::enable(selector = "input")
-    shinyjs::enable(selector = "select")
-    shinyjs::enable(selector = "button")
-    # Hide loading spinner
+    } else {
+      tagList(
+        br(),
+        h1(strong(
+          "Não foi pedida nenhuma desagregação"
+        )),
+        br()
+      )
+ }
+  shinyjs::enable(selector = "input")
+  shinyjs::enable(selector = "select")
+  shinyjs::enable(selector = "button")
+}) 
+}) 
+# 
+#     # Disable inputs
+#     shinyjs::disable(selector = "input")
+#     shinyjs::disable(selector = "select")
+#     shinyjs::disable(selector = "button")
+#     
+#     # Extract data from INE using the inputs from the UI
+#     if (length(filtered_indicators()) != 0 &
+#       nrow(filtered_area()$filtered_table) != 0) {
+observeEvent(input$go,{
+  output$results_table <- renderUI({
+    req(result_list_processed())
+    # Get the items from result_list_reactive
+    items <- names(result_list_reactive())
+    # Create a list of tabPanels with dataTables and downloadButtons
+    tabs <- lapply(items, function(item) {
+      full_name <- indicators$designacao[indicators$codigo_de_difusao == item]
+      title <-
+        substr(indicators$designacao[indicators$codigo_de_difusao == item], 1, 20)
+      if (length(full_name) == 0) {
+        full_name <- item
+      } else {
+        full_name <- full_name[1]
+      }
+      tabPanel(
+        title,
+        # set tooltip with full name
+        h4(strong(full_name)),
+        DTOutput(paste0(item, "_table")),
+        downloadButton(paste0(item, "_download"), paste0(item, ".csv")),
+        if(input$graficos_checkbox == TRUE){
+          plotOutput(paste0(item,"_plot"))
+          plotlyOutput(paste0(item,"_plotly"))
+          plotOutput(paste0(item,"_plot1"),height = "1200px", width ="auto")
+        },
+        if(input$meta_checkbox == TRUE){
+          req(meta_list_processed ())
+          downloadButton(paste0(item,"meta", "_download"), paste0(item,"meta",".csv"))
+        }
+      )
+    })
+    # Return a tabsetPanel with the tabs
+    do.call(tabsetPanel, tabs)
   })
-  # Render dataTables and download handlers when result_list_reactive changes
-  observe({
+})
+
+# 
+  # Render dataTables and download handlers and simple plot when result_list_reactive changes
+observe({
     lapply(names(result_list_reactive()), function(item) {
       output[[paste0(item, "_table")]] <- renderDT({
         # Get the data from result_list_reactive
         data <- result_list_reactive()[[item]]
+        data <- data %>%
+          # dplyr::filter(geodsg %in% input$chosen_items | geocod %in% filtered_area()$extra1| geocod %in% filtered_area()$extra2| geocod %in% filtered_area()$extra3 )%>%
+          mutate(valor = as.numeric(valor))%>%
+          mutate(year = str_sub(obs,-4))%>%
+          arrange(obs, year)
         # Return a dataTable with the data
-        DT::datatable(data)
+        DT::datatable(data,filter = list(position = 'top', clear = FALSE))
+        
       })
       output[[paste0(item, "_download")]] <- downloadHandler(
         filename = function() {
@@ -988,10 +1694,247 @@ observeEvent(input$go,{
           fwrite(data, file, sep = ";", bom = TRUE)
         }
       )}
+      if(input$graficos_checkbox == TRUE){ 
+      output[[paste0(item, "_plot")]] <- renderPlot({
+        # This line retrieves the full name of the item from the 'indicators' dataframe based on its code
+        full_name <- indicators$designacao[indicators$codigo_de_difusao == item]
+        # This line retrieves the data for the current item from the reactive function and converts it to a dataframe
+        data1 <- as.data.frame(result_list_reactive()[[item]]) %>%
+          # This line converts the 'valor' column to numeric and creates a 'year' column based on the last 4 characters of 'obs'
+          mutate(valor = as.numeric(valor),
+                 year = str_sub(obs, -4)) %>%
+          # This line sorts the data by 'obs' and 'year'
+          arrange(obs, year)
+        
+        if(any(str_detect(colnames(data1), "dim"))){
+          data1  <- data1%>%
+            select(ends_with("t")|!starts_with("dim"))
+        }
+        # This line creates a ggplot object with the data1 dataframe as input
+        if(any(str_detect(colnames(data1), "dim"))){
+          if(sum(str_detect(colnames(data1), "dim"))== 1){
+            data1<- data1%>% 
+              mutate(aggregate = interaction(geodsg, dim_3_t, sep = ", "))%>%
+              summarise(valor= sum(valor, na.rm = TRUE), .by = c(obs,aggregate,geodsg,dim_3_t,year))%>%
+              arrange(obs, year)
+            
+            
+            p <- ggplot2::ggplot() +
+              # This line adds a line layer with 'obs' on the x-axis, 'valor' on the y-axis, 'geodsg' as color, and 'geodsg' as the grouping variable
+              geom_line(data = data1,
+                        aes(x = factor(obs, levels = unique(obs), ordered = TRUE),
+                            y = valor,
+                            colour = dim_3_t,
+                            group =  interaction(geodsg, dim_3_t, sep = "-")),
+                        linewidth = 1.2) +
+              facet_wrap(~geodsg, scales = "free")+
+              # This line rotates the x-axis labels by 90 degrees
+              scale_x_discrete(guide = guide_axis(angle = 90)) +
+              # This line adds a legend for the color variable, using the name 'Localização Geográfica'
+              scale_color_hue(name = "Localização Geográfica") +
+              scale_color_hue(direction=1, aesthetics = "group")+
+              # This line sets the chart limits to remove extra white space
+              coord_cartesian(expand = FALSE) +
+              # This line adds a chart title, subtitle, and caption
+              labs(x = "Observações",
+                   y = "Valor",
+                   title = full_name,
+                   subtitle = paste0("Últimas ", length(unique(data1$obs)), " Observações"),
+                   caption = "Fonte dos Dados: INE") +
+              # This line sets the chart style to minimal and customizes the font sizes
+              theme_minimal() +
+              theme(plot.title = element_text(size = 14, face = "bold"),
+                    plot.subtitle = element_text(size = 12, face = "bold"),
+                    axis.title.y = element_text(size = 12),
+                    axis.title.x = element_text(size = 12),
+                    axis.text.y = element_text(size = 12),
+                    axis.text.x = element_text(size = 12),
+                    legend.title = element_text(size = 12))
+            
+            }else if(sum(str_detect(colnames(data1), "dim"))== 2){
+              #WORKING ON IT
+              p <- ggplot2::ggplot() +
+                # This line adds a line layer with 'obs' on the x-axis, 'valor' on the y-axis, 'geodsg' as color, and 'geodsg' as the grouping variable
+                geom_line(data = data1,
+                          aes(x = factor(obs, levels = unique(obs), ordered = TRUE),
+                              y = valor,
+                              colour = as.factor(geocod),
+                              group = interaction(geodsg, dim_3_t, dim_4_t, sep = "-")),
+                          linewidth = 1.2) +
+                # This line rotates the x-axis labels by 90 degrees
+                scale_x_discrete(guide = guide_axis(angle = 90)) +
+                # This line adds a legend for the color variable, using the name 'Localização Geográfica'
+                scale_color_discrete(name = "Localização Geográfica") +
+                # This line sets the chart limits to remove extra white space
+                coord_cartesian(expand = FALSE) +
+                # This line adds a chart title, subtitle, and caption
+                labs(x = "Observações",
+                     y = "Valor",
+                     title = full_name,
+                     subtitle = paste0("Últimas ", length(unique(data1$obs)), " Observações"),
+                     caption = "Fonte dos Dados: INE") +
+                # This line sets the chart style to minimal and customizes the font sizes
+                theme_minimal() +
+                theme(plot.title = element_text(size = 14, face = "bold"),
+                      plot.subtitle = element_text(size = 12, face = "bold"),
+                      axis.title.y = element_text(size = 12),
+                      axis.title.x = element_text(size = 12),
+                      axis.text.y = element_text(size = 12),
+                      axis.text.x = element_text(size = 12),
+                      legend.title = element_text(size = 12))
+              
+            }else{
+              p <- NULL
+            }
+          }else{
+              p <- ggplot2::ggplot() +
+                # This line adds a line layer with 'obs' on the x-axis, 'valor' on the y-axis, 'geodsg' as color, and 'geodsg' as the grouping variable
+                geom_line(data = data1,
+                          aes(x = factor(obs, levels = unique(obs), ordered = TRUE),
+                              y = valor,
+                              colour = as.factor(as.character(geocod)),
+                              group = geodsg),
+                          linewidth = 1.2) +
+                # This line rotates the x-axis labels by 90 degrees
+                scale_x_discrete(guide = guide_axis(angle = 90)) +
+                # This line adds a legend for the color variable, using the name 'Localização Geográfica'
+                scale_color_discrete(name = "Localização Geográfica") +
+                # This line sets the chart limits to remove extra white space
+                coord_cartesian(expand = FALSE) +
+                # This line adds a chart title, subtitle, and caption
+                labs(x = "Observações",
+                     y = "Valor",
+                     title = full_name,
+                     subtitle = paste0("Últimas ", length(unique(data1$obs)), " Observações"),
+                     caption = "Fonte dos Dados: INE") +
+                # This line sets the chart style to minimal and customizes the font sizes
+                theme_minimal() +
+                theme(plot.title = element_text(size = 14, face = "bold"),
+                      plot.subtitle = element_text(size = 12, face = "bold"),
+                      axis.title.y = element_text(size = 12),
+                      axis.title.x = element_text(size = 12),
+                      axis.text.y = element_text(size = 12),
+                      axis.text.x = element_text(size = 12),
+                      legend.title = element_text(size = 12))
+            }
+            
+            # This line prints the ggplot object
+            print(p)
+            return(p)
+      })
+      output[[paste0(item, "_plotly")]] <- renderPlotly({
+        p1 <- ggplotly()
+        # This line prints the ggplot object
+        print(p1)
+      })
+      output[[paste0(item, "_plot1")]] <- renderPlot({
+        # This line retrieves the full name of the item from the 'indicators' dataframe based on its code
+        full_name <- indicators$designacao[indicators$codigo_de_difusao == item]
+        # This line retrieves the data for the current item from the reactive function and converts it to a dataframe
+        data1 <- as.data.frame(result_list_reactive()[[item]]) %>%
+          # dplyr::filter(geodsg %in% input$chosen_items | geocod %in% filtered_area()$extra1| geocod %in% filtered_area()$extra2|geocod %in% filtered_area()$extra3 )%>%
+          # This line converts the 'valor' column to numeric and creates a 'year' column based on the last 4 characters of 'obs'
+          mutate(valor = as.numeric(valor),
+                 year = str_sub(obs, -4)) %>%
+          # This line sorts the data by 'obs' and 'year'
+          arrange(obs, year)
+        if(any(str_detect(colnames(data1), "dim"))){
+          data1  <- data1%>%
+            select(ends_with("t")|!starts_with("dim"))
+        }
+        # This line creates a ggplot object with the data1 dataframe as input
+        p <- ggplot2::ggplot() +
+          # This line adds a line layer with 'obs' on the x-axis, 'valor' on the y-axis, 'geodsg' as color, and 'geodsg' as the grouping variable
+          geom_line(data = data1,
+                    aes(x = factor(obs, levels = unique(obs), ordered = TRUE),
+                        y = valor,
+                        colour = as.factor(geocod),
+                        group = geodsg),
+                    linewidth = 1.2)
+        
+        if(any(str_detect(colnames(data1), "dim"))){
+          if(sum(str_detect(colnames(data1), "dim"))== 1){
+          p <- p+
+            facet_wrap(~dim_3_t, scales = "free")}
+          else if(sum(str_detect(colnames(data1), "dim"))== 2){
+            p <- p+
+              facet_wrap(~dim_3_t+dim_4_t, scales = "free")}
+          else{
+            p <- NULL
+          }
+        }
+          # This line rotates the x-axis labels by 90 degrees
+        p <- p +
+          scale_x_discrete(guide = guide_axis(angle = 90)) +
+          # This line adds a legend for the color variable, using the name 'Localização Geográfica'
+          scale_color_discrete(name = "Localização Geográfica") +
+          # This line sets the chart limits to remove extra white space
+          coord_cartesian(expand = FALSE) +
+          # This line adds a chart title, subtitle, and caption
+          labs(x = "Observações",
+               y = "Valor",
+               title = full_name,
+               subtitle = paste0("Últimas ", length(unique(data1$obs)), " Observações"),
+               caption = "Fonte dos Dados: INE") +
+          # This line sets the chart style to minimal and customizes the font sizes
+          theme_minimal() +
+          theme(plot.title = element_text(size = 14, face = "bold"),
+                plot.subtitle = element_text(size = 12, face = "bold"),
+                axis.title.y = element_text(size = 12),
+                axis.title.x = element_text(size = 12),
+                axis.text.y = element_text(size = 12),
+                axis.text.x = element_text(size = 12),
+                legend.title = element_text(size = 12))
+        
+        # This line prints the ggplot object
+        print(p)
+      })}
     })
+  # Enable inputs
+  shinyjs::enable(selector = "input")
+  shinyjs::enable(selector = "select")
+  shinyjs::enable(selector = "button")
   })
 }
 
 
+            
 # Run the application
 shinyApp(ui, server)
+
+# output[[paste0(item,"_plot")]] <- renderPlot({
+#   full_name <- indicators$designacao[indicators$codigo_de_difusao == item]
+#   data1 <- as.data.frame(result_list_reactive()[[item]]) %>%
+#     mutate(valor = as.numeric(valor),
+#            year = str_sub(obs, -4)) %>%
+#     arrange(obs, year)
+#   
+#   p <- ggplot2::ggplot() +
+#     geom_line(data=data1,
+#               aes(x = factor(obs, levels=unique(obs),ordered= TRUE),
+#                   y = valor
+#                   ,colour = as.factor(geodsg),
+#                   group= geodsg)
+#               ,linewidth = 1.2)+
+#     scale_x_discrete(guide = guide_axis(angle = 90))+
+#     scale_color_discrete(name = "Localização Geográfica") +
+#     coord_cartesian(expand = FALSE)+
+#     labs(
+#       x = "Observações",
+#       y = "Valor",
+#       title = full_name,
+#       subtitle = paste0("Últimas ",length(unique(data1$obs))," Observações"),
+#       caption = "Fonte dos Dados:INE")+
+#     theme_minimal()+
+#     theme(plot.title = element_text(size = 14, face = "bold"),
+#           plot.subtitle = element_text(size = 12, face = "bold"),
+#           axis.title.y = element_text(size = 12),
+#           axis.title.x = element_text(size = 12),
+#           axis.text.y = element_text(size = 12),
+#           axis.text.x = element_text(size = 12),
+#           legend.title = element_text(size = 12),
+#     )
+#   
+#   print(p)
+#   
+# })
