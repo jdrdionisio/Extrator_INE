@@ -3,20 +3,20 @@
 #
 # Find out more about building applications with Shiny here:
 #    http://shiny.rstudio.com/
-library(shiny)
-library(shinyWidgets)
-library(tidyverse)
-library(janitor)
-library(readxl)
-library(readr)
-library(jsonlite)
-library(data.table)
-library(DT)
-library(shinyjs)
-library(bslib)
-library(shinycssloaders)
-library(ggthemes)
-library(plotly)
+library(shiny, quietly = T)
+library(shinyWidgets, quietly = T)
+library(tidyverse, quietly = T)
+library(janitor, quietly = T)
+library(readxl, quietly = T)
+library(readr, quietly = T)
+library(jsonlite, quietly = T)
+library(data.table, quietly = T)
+library(DT, quietly = T)
+library(shinyjs, quietly = T)
+library(bslib, quietly = T)
+library(shinycssloaders, quietly = T)
+library(ggthemes, quietly = T)
+library(plotly, quietly = T)
 # Load a reference table of geographical aggregations and Portuguese health clusters
 geo_lookup <-
   read_delim(
@@ -113,9 +113,10 @@ ine.meta <- function(indicators, meta_list){
   return(meta_list)
 }
 # Main funtion for INE indicators extraction
-ine.get <- function(indicators,selected_areas,observation_requested, result_list, geo_reference,groups_chosen, groups_other, individual) {
+ine.get <- function(indicators,selected_areas,observation_requested, result_list, geo_reference,groups_chosen, groups_other, individual, all) {
     # Set the sleep timer to 0
     counter <- 0
+	if (isFALSE(all)){
     # Save the selected areas' codes into vectors
     dicofre_2013 <- unique(selected_areas$dicofre_2013)
     municipio_2013 <- unique(selected_areas$municipio_2013_cod)
@@ -125,6 +126,18 @@ ine.get <- function(indicators,selected_areas,observation_requested, result_list
     nuts_2_2013 <- unique(selected_areas$nuts2_2013_cod)
     nuts_1_2013 <- unique(selected_areas$nuts1_2013_cod)
     pais <- unique(selected_areas$pais_cod)
+	}else{
+	dicofre_2013 <- unique(geo_lookup$dicofre_2013)
+    municipio_2013 <- unique(geo_lookup$municipio_2013_cod)
+    municipio_2002 <- unique(geo_lookup$municipio_2002_cod)
+    nuts_3_2013 <- unique(geo_lookup$nuts3_2013_cod)
+    nuts_3_2002 <- unique(geo_lookup$nuts3_2002_cod)
+    nuts_2_2013 <- unique(geo_lookup$nuts2_2013_cod)
+    nuts_1_2013 <- unique(geo_lookup$nuts1_2013_cod)
+    pais <- unique(geo_lookup$pais_cod)
+	}
+	
+	
     # Joins the code vectors in a list
     codes_reference <- list(
       dicofre_2013,
@@ -834,7 +847,7 @@ ui <- fluidPage(
   ,spacer = "0.3rem", bootswatch = "minty"),
   # theme = bs_theme(), 
   # Change theme at will must activate bs_themer() in server
-  "Extrator INE v0.4",
+  "Extrator INE v0.42",
   nav_panel(
     "Extração de dados",
     useShinyjs(),
@@ -941,19 +954,19 @@ ui <- fluidPage(
     fluidRow(
       class = "responsive-row",
       column(
-        width = 2,
+        width = 4,
         align = "left",
         height = 60,
         imageOutput("sns_img2", height = "60px")
       ),
       column(
-        width = 2,
+        width = 4,
         align = "left",
         height = 60,
         imageOutput("dgs_img2", height = "60px")
       ),
       column(
-        width = 3,
+        width = 4,
         align = "left",
         height = 60,
         imageOutput("ine_img2", height = "60px")
@@ -961,7 +974,7 @@ ui <- fluidPage(
     ),
     sidebarLayout(
       sidebarPanel(
-        h3(strong("Autoria")),
+        h4(strong("Autoria")),
         h4(
           strong("João Dionísio, Rafael Vasconcelos")
         )
@@ -975,17 +988,25 @@ ui <- fluidPage(
         p("- Indicadores base em datasets base para evitar extração INE constante."),
         br(),
         h2("Changelog"),
+<<<<<<< Updated upstream
         h3("V0.42"),
         h4("2024-03-27"),
         p("- Otimização de pesquisa de indicadores contínua;"),
         p("- Ponderada remoção do botão de reiniciar - manter para já"),
         h3("V0.4"),
+=======
+        h4("V0.42"),
+        h4("2023-02-05"),
+        p("- Corecção do mapeamento por ULS"),
+        p("- Resolução de bug em que a seleção de todos os locais não permitia extração"),
+        h4("V0.41"),
+>>>>>>> Stashed changes
         h4("2023-12-08"),
         p("- Otimização de indicadores pequenos para extração completa;"),
         p("- Dada opção para extração por ULS"),
         p("- Dada opção para extração individual"),
         p("- Dada opção para criação de gráficos"),
-        h3("V0.3.6"),
+        h4("V0.3.6"),
         h4("2023-05-17"),
         p("- Corrigir o cálculo dos indicadores para distrito, ACES, ARS quando há múltiplas dimensões (até 5 dimensões);"),
         p("- Adicionado filtro em tabela para manipulação dos resultados;"),
@@ -997,34 +1018,39 @@ ui <- fluidPage(
         h4("2023-03-21"),
         p("- Melhoria da adaptação das visualizações;"),
         br(),
-        h3("V0.3"),
+        h4("V0.3"),
         h4("2023-03-18"),
         p("- Melhorias visuais"),
         p("- Feedback ao utilizador de funcionamento da função principal"),
         p("- Visualização dos dados recolhidos"),
         br(),
-        h3("V0.2.2"),
+        h4("V0.2.2"),
         h4("2023-03-16"),
         p("- Possibilitada a transferência de metadados."),
         p("- Alteração do ficheiro de saída com UTF-8 para manter caracteres especiais."),
         p("- Remoção temporária de opções de outros níveis que causavam erro."),
         p("- Redução no número de chamadas ao servidor, se houver redundâncias."),
         br(),
-        h3("V0.2.0"),
+        h4("V0.2.0"),
         h4("2023-03-15"),
         p("- Reescrita das instruções;"),
         p("- Estruturação dos resultados com várias níveis geográficos em simultâneo."),
         br(),
-        h3("V0.1.1"),
+        h4("V0.1.1"),
         h4("2023-03-14"),
         p("- Redução do tempo entre chamadas ao servidor;"),
         p("- Otimização do número de uniões dos resultados recebidos;"),
         p("- Correção de erro na listagem dos municípios."),
-        h2("Bugs Conhecidos"),
-        h4("Em 2023-03-17"),
+        h4("Bugs Conhecidos"),
+        h4("Em 2023-12-17"),
         p("- Problema na escolha de várias agregações superiores e inferiores que não permite filtro só do que foi pedido;"),
+<<<<<<< Updated upstream
         # p("- Botão de submissão apenas respeitado na primeira submissão. O programa não respeita o botão após, necessidade de criar botão reiniciar;"),
         p("- Extrações de todas as freguesias do país em múltiplos indicadores leva a quebra do sistema.")
+=======
+        #p("- Botão de submissão apenas respeitado na primeira submissão. O programa não respeita o botão após, necessidade de criar botão reiniciar;"),
+        p("- Extrações de todas as freguesias do país em múltiplos indicadores leva a quebra do sistema."),
+>>>>>>> Stashed changes
         #p("- Extrações do indicador do país num indicador que não o tem leva a quebra do sistema.- Resolvido")
       )
     )
@@ -1113,7 +1139,7 @@ server <- function(input, output, session) {
   })
   # Retrieves the list of available items for the chosen geographic level
   # Update chosen_group_options() whenever input$chosen_group_dropdown changes
-  observeEvent(input$chosen_group_dropdown, {
+  observeEvent(selected_input(), {
     if (input$chosen_group_dropdown == "Freguesia") {
       chosen_group_options$available_items <- geo_lookup$freguesia_2013
     } else if (input$chosen_group_dropdown == "Município") {
@@ -1163,8 +1189,9 @@ server <- function(input, output, session) {
         "chosen_items",
         choices = chosen_group_options$available_items,
         options = list(
-                # placeholder = "Barra de pesquisa",
-                create = FALSE
+                placeholder = "Barra de pesquisa",
+                create = FALSE,
+                multiple = TRUE
               ),
         selected = chosen_group_options$available_items,
         server = TRUE
@@ -1176,7 +1203,8 @@ server <- function(input, output, session) {
             choices = chosen_group_options$available_items,
             options = list(
               placeholder = "Barra de pesquisa",
-              create = FALSE
+              create = FALSE,
+              multiple = TRUE
             ),
             server = TRUE
           )
@@ -1335,6 +1363,19 @@ server <- function(input, output, session) {
           "ACES",
           "ULS"
         )
+    } else if (input$chosen_group_dropdown == "ULS") {
+      other_groups <-
+        c(
+          "Freguesia",
+          "Município",
+          # "Distrito",
+          "NUTS III",
+          "NUTS II",
+          "NUTS I",
+          "País",
+          "ACES",
+          "ARS"
+        )
     }
     return(other_groups)
   })
@@ -1355,9 +1396,12 @@ server <- function(input, output, session) {
   })
   # Create a reactive function for the focused area codes
   filtered_area <- reactive({
+  if(isFALSE(input$select_all_checkbox)){
     if(is.null(input$other_groups_list)|(!("Distrito"%in%input$other_groups_list)&!("ACES"%in%input$other_groups_list)&!("ARS"%in%input$other_groups_list)&!("ULS"%in%input$other_groups_list))){
-    filtered <-
+    
+	filtered <-
       geo_lookup |> filter(chosen_group_options$available_items %in% input$chosen_items)
+
     # Sets lists of codes for debug panel
     f_freguesia <- filtered |>
       pull(dicofre_2013) |>
@@ -1401,6 +1445,7 @@ server <- function(input, output, session) {
       f_municipio_2002 <- filtered |>
         pull(municipio_2002_cod) |>
         unique()
+
       return(
         list(
           filtered_table = filtered,
@@ -1433,7 +1478,7 @@ server <- function(input, output, session) {
       f_municipio_2002 <- filtered |>
         pull(municipio_2002_cod) |>
         unique()
-      
+
       return(
         list(
           filtered_table = filtered,
@@ -1454,8 +1499,7 @@ server <- function(input, output, session) {
     #   extra2 <- unique(filtered$ars_2022_cod)}else{extra2 <- c()        }
     # if("Distrito"%in%input$other_groups_list){
     #   extra3 <- unique(filtered$distrito_2013_cod)}else{extra3 <- c()        }
-    filtered <-
-      geo_lookup |> filter(aces_2022 %in% extra)
+    filtered <-geo_lookup |> filter(aces_2022 %in% extra)
     # Sets lists of codes for debug panel
     f_freguesia <- filtered |>
       pull(dicofre_2013) |>
@@ -1511,7 +1555,38 @@ server <- function(input, output, session) {
       )
     )
     
-  }})
+  }
+  } else{
+	filtered <-
+      geo_lookup
+    # extra1 <- unique(filtered$aces_2022_cod)
+    # if("ARS"%in%input$other_groups_list){
+    #   extra2 <- unique(filtered$ars_2022_cod)}else{extra2 <- c()        }
+    # if("Distrito"%in%input$other_groups_list){
+    #   extra3 <- unique(filtered$distrito_2013_cod)}else{extra3 <- c()        }
+    # Sets lists of codes for debug panel
+    f_freguesia <- filtered |>
+      pull(dicofre_2013) |>
+      unique()
+    f_municipio_2013 <- filtered |>
+      pull(municipio_2013_cod) |>
+      unique()
+    f_municipio_2002 <- filtered |>
+      pull(municipio_2002_cod) |>
+      unique()
+    return(
+      list(
+        filtered_table = filtered,
+        f_freguesia = f_freguesia,
+        f_municipio_2013 = f_municipio_2013,
+        f_municipio_2002 = f_municipio_2002,
+        extra1="NA"
+        # extra2=extra2,
+        # extra3=extra3
+      )
+    )
+  }
+  })
   # Create a reactive function to ge the chosen indicator codes
   filtered_indicators <- reactive({
     f_indicators <- indicators |>
@@ -1588,12 +1663,76 @@ observeEvent(input$stop,{
 }, ignoreNULL = TRUE)
 
 observeEvent(input$go,{
+<<<<<<< Updated upstream
   output$error <- renderUI({
    if (length(filtered_indicators()) == 0) {
       tagList(
         br(),
         h1(strong("Não foi pedido nenhum indicador")),
         br()
+=======
+    # Disable inputs
+    shinyjs::disable(selector = "input")
+    shinyjs::disable(selector = "select")
+    shinyjs::disable(selector = "button")
+    result_list <- result_list
+    meta_list <- meta_list
+    # Extract data from INE using the inputs from the UI
+    if (length(filtered_indicators()) != 0 &
+      nrow(filtered_area()$filtered_table) != 0) {
+      # Render the tabs based on the reactive value
+      output$results_table <- renderUI({
+        result_list_updated <- ine.get(indicators = filtered_indicators(),selected_areas = filtered_area()$filtered_table, observation_requested = input$observation_slider,result_list = result_list,
+                                       geo_reference = geo_reference,
+                                       groups_chosen = input$chosen_group_dropdown,
+                                       groups_other = input$other_groups_list,
+                                       individual = input$individual_checkbox,
+									   all=input$select_all_checkbox
+        )
+        result_list_reactive(result_list_updated)
+        dimmension_chosen(c(input$other_groups_list, input$chosen_group_dropdown))
+
+        output$error <- NULL
+        # Get the items from result_list_reactive
+        items <- names(result_list_reactive())
+        # Create a list of tabPanels with dataTables and downloadButtons
+        tabs <- lapply(items, function(item) {
+          full_name <- indicators$designacao[indicators$codigo_de_difusao == item]
+          title <-
+            substr(indicators$designacao[indicators$codigo_de_difusao == item], 1, 20)
+          if (length(full_name) == 0) {
+            full_name <- item
+          } else {
+            full_name <- full_name[1]
+          }
+          tabPanel(
+            title,
+            # set tooltip with full name
+            h4(strong(full_name)),
+            DTOutput(paste0(item, "_table")),
+            downloadButton(paste0(item, "_download"), paste0(item, ".csv")),
+            if(input$graficos_checkbox == TRUE){
+              plotOutput(paste0(item,"_plot"))
+              plotlyOutput(paste0(item,"_plotly"))
+              plotOutput(paste0(item,"_plot1"),height = "1200px", width ="auto")
+            },
+            if(input$meta_checkbox == TRUE){
+              downloadButton(paste0(item,"meta", "_download"), paste0(item,"meta",".csv"))
+            }
+          )
+        })
+        # Return a tabsetPanel with the tabs
+        do.call(tabsetPanel, tabs)
+      })
+    } else if (length(filtered_indicators()) == 0) {
+      output$error <- renderUI({
+        tagList(
+          br(),
+          h1(strong("Não foi pedido nenhum indicador")),
+          br()
+        )
+      }
+>>>>>>> Stashed changes
       )
     } else {
       tagList(
