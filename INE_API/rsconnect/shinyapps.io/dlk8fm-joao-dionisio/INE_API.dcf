@@ -5,11 +5,7 @@ account: dlk8fm-joao-dionisio
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 8487356
-<<<<<<< Updated upstream
 bundleId: 8424356
-=======
-bundleId: 8221097
->>>>>>> Stashed changes
 url: https://dlk8fm-joao-dionisio.shinyapps.io/INE_API/
 asMultiple: FALSE
 asStatic: FALSE
