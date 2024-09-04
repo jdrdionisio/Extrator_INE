@@ -565,7 +565,7 @@ ui <- fluidPage(
         h4("Bugs Conhecidos"),
         h4("Em 2024-06-16"),
         p("- Problema na escolha de várias agregações superiores e inferiores que não permite filtro só do que foi pedido;"),
-		p("- Falha na conexão ao INE não dá feedback ao utilizador")
+		    p("- Falha na conexão ao INE não dá feedback ao utilizador"),
         p("- Extrações de todas as freguesias do país em múltiplos indicadores leva a quebra do sistema.")
       )
     )
