@@ -299,12 +299,18 @@ ine.get <- function(indicators,selected_areas,observation_requested, result_list
                 # Call the INE API to gather the datasets for each code
                 reqs <- map(codes_chosen,\(x) request_base|> req_url_query(!!!params,Dim2=x))
                 reqs_raw <- reqs |> req_perform_parallel(on_error = "continue")
+                # Function to safely read the JSON response, using purrr::safely
+                safe_resps_data <- safely(function(resp) {
+                  data <- read_json_raw(resp$body)
+                  return(data)  # Return the data if successful
+                })
+                
+                # Apply the safe function to all responses, continuing even if an error occurs
                 results_raw <- reqs_raw |> 
-                  resps_data(
-                    function(resp){
-                        data <- read_json_raw(resp$body)
-                    }
-                  )
+                  resps_data(function(resp) {
+                    safe_resps_data(resp)  # Apply the safe version of read_json_raw
+                  })
+                
                 results <- map(results_raw$Dados, \(x) unpack_df(x)) |> list_rbind()
                 observation_available_names <- names(results_raw$Dados[[1]])
                 observation_available <- length(observation_available_names)
@@ -335,7 +341,10 @@ ine.get <- function(indicators,selected_areas,observation_requested, result_list
               }
               # Get names of the observations of interest
               observation_used_names <- c(observation_available_names[(observation_available - observation_used + 1):(observation_available)])
-              
+              if (!"obs" %in% names(results)) {
+                # If 'obs' doesn't exist, create the 'obs' column with the value "0000"
+                results <- results |> mutate(obs = "0000")
+              }
               df_all <- results |> 
                 dplyr::filter(obs %in% observation_available_names)
               
