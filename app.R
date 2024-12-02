@@ -498,6 +498,7 @@ ui <- fluidPage(
         checkboxInput("select_all_checkbox", "Selecionar todos", FALSE),
         # Dropdown for additional desagregação options
         uiOutput("chosen_items_search"),
+        p("Se Extração Normal falhar, tentar extração individual"),
         checkboxInput("individual_checkbox",
                       "Extração individual",
                       FALSE)|> tooltip("Aumenta tempo de extração mas útil em indicadores com múltiplas dimensões com extração completa que não inclua níveis mais pequenos."),
