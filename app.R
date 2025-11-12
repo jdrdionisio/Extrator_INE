@@ -26,23 +26,52 @@ library(httr2, quietly = T)
 #     col_types = cols(.default = "c"),
 #     locale = locale("pt")
 #   )
-geo_lookup <- fread("datasets/geo_linkage_2024_v2.csv")
+geo_lookup <- fread("datasets/geo_linkage_2024_v6.csv")
 # Remove `unknown` and `abroad` from the reference table
 geo_lookup <- geo_lookup |>
   filter(!dicofre_2013 %in% c("0", "999999"))
 # What data should be bound in the end?
+# geo_reference <- list(
+#   freguesia_2013 = geo_lookup,
+#   municipio_2013 = geo_lookup[3:22],
+#   municipio_2002 = geo_lookup[3:22],
+#   nuts3_2013 = geo_lookup[c(8:22)],
+#   nuts3_2002 = geo_lookup[c(8:22)],
+#   nuts2_2013 = geo_lookup[c(11:22)],
+#   nuts1_2013 = geo_lookup[c(13:22)],
+#   pais = geo_lookup[c(15:22)],
+#   aces_2022 = geo_lookup[c(3:5, 8:22)],
+#   uls_2023 = geo_lookup[c(3:5, 8:22)],
+#   ars_2022 = geo_lookup[c(3:5, 11:22)]
+# )
+#  [1] "freguesia_2025"             "abreviatura_freguesia_2025" "freguesia_2013"             "fr_2025"
+#  [5] "dicofre_2025"               "dicofre_2013"               "dicofre_2013_2"             "municipio_2013"
+#  [9] "dt_mun"                     "mn_2025"                    "municipio_2024_cod"         "municipio_2013_cod"
+# [13] "municipio_2002_cod"         "distrito_2013"              "dt_2025"                    "distrito_2013_cod"
+# [17] "nuts3_2013"                 "nuts3_2013_cod"             "nuts3_2002_cod"             "nuts3_2024"
+# [21] "nuts3_2024_cod"             "nuts2_2013"                 "nuts2_2013_cod"             "nuts2_2024"
+# [25] "nuts2_2024_cod"             "nuts1_2013"                 "nuts1_2013_cod"             "pais"
+# [29] "pais_cod"                   "uls_hierarquia_csp"         "uls_2024"                   "uls_2023"
+# [33] "aces_2022"                  "aces_2022_cod"              "ars_2022"                   "ars_2022_cod"
+# [37] "regiao_2024"
 geo_reference <- list(
-  freguesia_2013 = geo_lookup,
-  municipio_2013 = geo_lookup[3:22],
-  municipio_2002 = geo_lookup[3:22],
-  nuts3_2013 = geo_lookup[c(8:22)],
-  nuts3_2002 = geo_lookup[c(8:22)],
-  nuts2_2013 = geo_lookup[c(11:22)],
-  nuts1_2013 = geo_lookup[c(13:22)],
-  pais = geo_lookup[c(15:22)],
-  aces_2022 = geo_lookup[c(3:5, 8:22)],
-  uls_2023 = geo_lookup[c(3:5, 8:22)],
-  ars_2022 = geo_lookup[c(3:5, 11:22)]
+  freguesia_2025 = geo_lookup,
+  freguesia_2013 = geo_lookup[c(3, 5:37)],
+  municipio_2024 = geo_lookup[5:37],
+  municipio_2013 = geo_lookup[5:37],
+  municipio_2002 = geo_lookup[5:37],
+  nuts3_2024 = geo_lookup[c(17:37)],
+  nuts3_2013 = geo_lookup[c(17:37)],
+  nuts3_2002 = geo_lookup[c(17:37)],
+  nuts2_2024 = geo_lookup[c(22:37)],
+  nuts2_2013 = geo_lookup[c(22:37)],
+  nuts1_2024 = geo_lookup[c(26:37)],
+  nuts1_2013 = geo_lookup[c(26:37)],
+  pais = geo_lookup[c(28:37)],
+  aces_2022 = geo_lookup[c(5:10, 17:37)],
+  uls_2024 = geo_lookup[c(5:10, 17:37)],
+  regioes_2024 = geo_lookup[c(5:10, 17:37)],
+  ars_2022 = geo_lookup[c(5:10, 17:37)]
 )
 # Retrieve the available indicators
 indicators <- read_excel("datasets/Indicadores.xlsx",
@@ -78,13 +107,35 @@ unpack_df <- function(nested_df) {
     .x
   }))
 }
+
+# codes_reference <- list(
+#   dicofre_2025 <- unique(selected_areas$dicofre_2025),
+#   dicofre_2013 <- unique(selected_areas$dicofre_2013),
+#   municipio_2013 <- unique(selected_areas$municipio_2013_cod),
+#   municipio_2002 <- unique(selected_areas$municipio_2002_cod),
+#   nuts_3_2013 <- unique(selected_areas$nuts3_2013_cod),
+#   nuts_3_2002 <- unique(selected_areas$nuts3_2002_cod),
+#   nuts_2_2013 <- unique(selected_areas$nuts2_2013_cod),
+#   nuts_1_2013 <- unique(selected_areas$nuts1_2013_cod),
+#   pais <- unique(selected_areas$pais_cod),
+#   ""
+# )
+
 apply_filters <- function(df, groups_to_exclude, codes_reference,groups_chosen) {
   filter_conditions <- list(
-    "Município" = codes_reference[[2]],
-    "NUTS III" = codes_reference[[4]],
-    "NUTS II" = codes_reference[[6]],
-    "NUTS I" = codes_reference[[7]],
-    "País" = codes_reference[[8]]
+    "Município" = c(
+      codes_reference$municipio_2024,
+      codes_reference$municipio_2013,
+      codes_reference$municipio_2002
+    ),
+    "NUTS III" = c(
+      codes_reference$nuts3_2024,
+      codes_reference$nuts3_2013,
+      codes_reference$nuts3_2002
+    ),
+    "NUTS II" = c(codes_reference$nuts2_2024, codes_reference$nuts2_2013),
+    "NUTS I" = codes_reference$nuts1_2013,
+    "País" = codes_reference$pais
   )
       for (group in groups_to_exclude) {
          if (!group %in% groups_chosen) {
@@ -103,11 +154,13 @@ generate_dim_columns <- function(num_dims) {
   return(dim_columns)
 }
 
+#Adicionada região
 synthetic_level <- data.frame(
-  Distrito=c("distrito_2013","distrito_2013_cod"),
-  ACES=c("aces_2022","aces_2022_cod"),
-  ARS=c("ars_2022","ars_2022_cod"),
-  ULS=c("uls_2023","uls_2023_cod")
+  Distrito = c("distrito_2013", "distrito_2013_cod"),
+  ACES = c("aces_2022", "aces_2022_cod"),
+  ARS = c("ars_2022", "ars_2022_cod"),
+  REGIAO = c("regiao_2024"),
+  ULS = c("uls_2024", "uls_2024_cod")
 )
 
 join_synthetic <- function(df, synthetic_group,level_names_success, geo_chosen){
@@ -137,6 +190,7 @@ join_synthetic <- function(df, synthetic_group,level_names_success, geo_chosen){
   df <- bind_rows(df,new_df)
   return(df)
 }
+
 ine.meta <- function(indicators, meta_list){
   counter <- 0
   for (i in 1:length(indicators)) {
@@ -184,35 +238,62 @@ ine.get <- function(indicators,selected_areas,observation_requested, result_list
     # Save the selected areas' codes into vectors
     # Joins the code vectors in a list
     codes_reference <- list(
+      dicofre_2025 <- unique(selected_areas$dicofre_2025),
       dicofre_2013 <- unique(selected_areas$dicofre_2013),
+      municipio_2024 <- unique(selected_areas$municipio_2024_cod),
       municipio_2013 <- unique(selected_areas$municipio_2013_cod),
       municipio_2002 <- unique(selected_areas$municipio_2002_cod),
+      nuts_3_2024 <- unique(selected_areas$nuts3_2024_cod),
       nuts_3_2013 <- unique(selected_areas$nuts3_2013_cod),
       nuts_3_2002 <- unique(selected_areas$nuts3_2002_cod),
+      nuts_2_2024 <- unique(selected_areas$nuts2_2024_cod),
       nuts_2_2013 <- unique(selected_areas$nuts2_2013_cod),
       nuts_1_2013 <- unique(selected_areas$nuts1_2013_cod),
       pais <- unique(selected_areas$pais_cod),
       ""
     )
-    # Joins the col_names strings in a list
-    level_names_reference <- c(
+    names(codes_reference) <- c(
+      "dicofre_2025",
       "dicofre_2013",
+      "municipio_2024",
+      "municipio_2013",
+      "municipio_2002",
+      "nuts3_2024",
+      "nuts3_2013",
+      "nuts3_2002",
+      "nuts2_2024",
+      "nuts2_2013",
+      "nuts1_2013",
+      "pais",
+      ""
+    )
+
+    level_names_reference <- c(
+      "dicofre_2025",
+      "dicofre_2013",
+      "municipio_2024_cod",
       "municipio_2013_cod",
       "municipio_2002_cod",
+      "nuts3_2024_cod",
       "nuts3_2013_cod",
       "nuts3_2002_cod",
+      "nuts2_2024_cod",
       "nuts2_2013_cod",
       "nuts1_2013_cod",
       "pais_cod",
       ""
     )
     level_test <- c(
-      "011102",      # Tests parishes
-      "16E0111",      # Tests 2013 municipalities
-      "1610111",  # Tests 2002 municipalities
+      "0302FK", # Tests 2025 parishes
+      "011102", # Tests parishes
+      "16G1823", # Tests 2024 municipalities
+      "16E0111", # Tests 2013 municipalities
+      "1610111", # Tests 2002 municipalities
+      "194", # Tests 2024 NUTS III
       "16E", # Tests 2013 NUTS III
-      "161",  # Tests 2002 NUTS III
-      "16",       # Tests NUTS II
+      "161", # Tests 2002 NUTS III
+      "19", # Tests 2024 NUTS II
+      "16", # Tests 2013 NUTS II
       "1", # Tests NUTS II
       "PT" # Tests country
     )
@@ -225,15 +306,20 @@ ine.get <- function(indicators,selected_areas,observation_requested, result_list
       params <- list(op=2, varcd=indicators_current, Dim1="T",lang="PT")
       
       reqs <- list(
-        request_base |> req_url_query(!!!params,Dim2=level_test[1]),
-        request_base |> req_url_query(!!!params,Dim2=level_test[2]),
-        request_base |> req_url_query(!!!params,Dim2=level_test[3]),
-        request_base |> req_url_query(!!!params,Dim2=level_test[4]),
-        request_base |> req_url_query(!!!params,Dim2=level_test[5]),
-        request_base |> req_url_query(!!!params,Dim2=level_test[6]),
-        request_base |> req_url_query(!!!params,Dim2=level_test[7]),
-        request_base |> req_url_query(!!!params,Dim2=level_test[8])
-      ) |> req_perform_parallel(on_error = "continue")
+        request_base |> req_url_query(!!!params, Dim2 = level_test[1]),
+        request_base |> req_url_query(!!!params, Dim2 = level_test[2]),
+        request_base |> req_url_query(!!!params, Dim2 = level_test[3]),
+        request_base |> req_url_query(!!!params, Dim2 = level_test[4]),
+        request_base |> req_url_query(!!!params, Dim2 = level_test[5]),
+        request_base |> req_url_query(!!!params, Dim2 = level_test[6]),
+        request_base |> req_url_query(!!!params, Dim2 = level_test[7]),
+        request_base |> req_url_query(!!!params, Dim2 = level_test[8]),
+        request_base |> req_url_query(!!!params, Dim2 = level_test[9]),
+        request_base |> req_url_query(!!!params, Dim2 = level_test[10]),
+        request_base |> req_url_query(!!!params, Dim2 = level_test[11]),
+        request_base |> req_url_query(!!!params, Dim2 = level_test[12])
+      ) |>
+        req_perform_parallel(on_error = "continue")
       
       test <- reqs |> 
         resps_data(
@@ -256,142 +342,256 @@ ine.get <- function(indicators,selected_areas,observation_requested, result_list
       } else{
         all <- list(Sucesso = data.frame("Falso" = c("Falso")))
       }
-          if("Falso" %in% all$Sucesso[[1]]){
-            success <- c(10)
-            for (k in 1:length(groups_chosen)) {
-              # Set starting level
-              l <- case_when(
-                groups_chosen[k] == "Freguesia" ~ 1,
-                groups_chosen[k] == "Município" ~ 2,
-                groups_chosen[k] == "Distrito" ~ 2,
-                groups_chosen[k] == "NUTS III" ~ 4,
-                groups_chosen[k] == "NUTS II" ~ 6,
-                groups_chosen[k] == "NUTS I" ~ 7,
-                groups_chosen[k] == "País" ~ 8,
-                groups_chosen[k] == "ACES" ~ 1,
-                groups_chosen[k] == "ARS" ~ 2,
-                groups_chosen[k] == "ULS" ~ 2,
-                # If all others fail, the default is the parish level
-                TRUE ~ 1
+      if ("Falso" %in% all$Sucesso[[1]]) {
+        success <- c(11)
+        for (k in 1:length(groups_chosen)) {
+          # Set starting level
+          l <- case_when(
+            groups_chosen[k] == "Freguesia" ~ 1,
+            groups_chosen[k] == "Município" ~ 2,
+            groups_chosen[k] == "Distrito" ~ 2,
+            groups_chosen[k] == "NUTS III" ~ 4,
+            groups_chosen[k] == "NUTS II" ~ 6,
+            groups_chosen[k] == "NUTS I" ~ 7,
+            groups_chosen[k] == "País" ~ 8,
+            groups_chosen[k] == "ACES" ~ 1,
+            groups_chosen[k] == "ARS" ~ 2,
+            groups_chosen[k] == "REGIAO" ~ 2,
+            groups_chosen[k] == "ULS" ~ 2,
+            # If all others fail, the default is the parish level
+            TRUE ~ 1
+          )
+          # Sets the chosen values from the starting level
+          codes_chosen <- codes_reference[[l]]
+          geo_chosen <- geo_reference[[l]]
+          level_names_chosen <- level_names_reference[l]
+          # If it fails, then it increments until it finds a level with data
+          while ("Falso" %in% names(test[[l]][[1]]) & l < 11) {
+            l <- l + 1
+            codes_chosen <- codes_reference[[l]]
+            geo_chosen <- geo_reference[[l]]
+            level_names_chosen <- level_names_reference[l]
+            # Error condition when none of the selected levels have data
+            if (l == 10) {
+              errorCondition(
+                "Condições selecionadas sem resultados para este indicador."
               )
-              # Sets the chosen values from the starting level
-              codes_chosen <- codes_reference[[l]]
-              geo_chosen <- geo_reference[[l]]
-              level_names_chosen <- level_names_reference[l]
-              # If it fails, then it increments until it finds a level with data
-              while ("Falso" %in% names(test[[l]][[1]]) & l < 10) {
-                l <- l + 1
-                codes_chosen <- codes_reference[[l]]
-                geo_chosen <- geo_reference[[l]]
-                level_names_chosen <- level_names_reference[l]
-                # Error condition when none of the selected levels have data
-                if (l == 9) {
-                  errorCondition("Condições selecionadas sem resultados para este indicador.")
-                }
-              }
-              # If the level we want was already retrieved, jump to the next `groups_chosen`
-              if (l %in% success) {
-                next
-              } else {
-                # Set an empty result data frame for all codes in each level
-                df_all <- data.frame()
-                # It increments along the codes
-                # Call the INE API to gather the datasets for each code
-                reqs <- map(codes_chosen,\(x) request_base|> req_url_query(!!!params,Dim2=x))
-                reqs_raw <- reqs |> req_perform_parallel(on_error = "continue")
-                # Function to safely read the JSON response, using purrr::safely
-                safe_resps_data <- safely(function(resp) {
-                  data <- read_json_raw(resp$body)
-                  return(data)  # Return the data if successful
-                })
-                
-                # Apply the safe function to all responses, continuing even if an error occurs
-                results_raw <- reqs_raw |> 
-                  resps_data(function(resp) {
-                    safe_resps_data(resp)  # Apply the safe version of read_json_raw
-                  })
-                
-                results <- map(results_raw$Dados, \(x) unpack_df(x)) |> list_rbind()
-                observation_available_names <- names(results_raw$Dados[[1]])
-                observation_available <- length(observation_available_names)
-                # Checks if the requested number of observations is available
-                if (observation_requested > observation_available) {
-                  observation_used <- observation_available
-                } else {
-                  observation_used <- observation_requested
-                }
-                # Get names of the observations of interest
-                observation_used_names <- c(observation_available_names[(observation_available - observation_used + 1):(observation_available)])
-                df_all <- results |> 
-                  dplyr::filter(obs %in% observation_available_names)
-                result_list[[indicators_current]] <- df_all
-              }
+            }
           }
-        }else{
-        # Extracts the data from  the INE API response
-              df_all <- data.frame()
-              results <- unpack_df(all$Dados[[1]])
-              observation_available_names <- names(all$Dados[[1]])
-              observation_available <- length(observation_available_names)
-              # Checks if the requested number of observations is available
-              if (observation_requested > observation_available) {
-                observation_used <- observation_available
-              } else {
-                observation_used <- observation_requested
+          # If the level we want was already retrieved, jump to the next `groups_chosen`
+          if (l %in% success) {
+            next
+          } else {
+            # Set an empty result data frame for all codes in each level
+            df_all <- data.frame()
+            # It increments along the codes
+            # Call the INE API to gather the datasets for each code
+            reqs <- map(codes_chosen, \(x) {
+              request_base |> req_url_query(!!!params, Dim2 = x)
+            })
+            # Function to perform API request with retry logic and data validation
+            reqs_raw <- reqs |> req_perform_parallel(on_error = "continue")
+            #print(reqs_raw |> resps_successes())
+            # Function to safely read the JSON response, using purrr::safely
+            safe_resps_data <- safely(function(resp) {
+              data <- read_json_raw(resp$body)
+              if (!("Dados" %in% names(data))) {
+                data$Dados <- data.frame(
+                  obs = "0000",
+                  valor = "0"
+                ) # Add Dados as an empty dataframe
               }
-              # Get names of the observations of interest
-              observation_used_names <- c(observation_available_names[(observation_available - observation_used + 1):(observation_available)])
-              if (!"obs" %in% names(results)) {
-                # If 'obs' doesn't exist, create the 'obs' column with the value "0000"
-                results <- results |> mutate(obs = "0000")
-              }
-              df_all <- results |> 
-                dplyr::filter(obs %in% observation_available_names)
-              
-              success <- c(10)
-                for (y in 1:length(level_test)) {
-                  if("Falso" %in% names(test$Sucesso[[y]])){
-                   next 
-                  }else{
-                   success <- sort(c(success,y))
-                  }
+              return(data) # Return the data if successful
+            })
+
+            # Apply the safe function to all responses, continuing even if an error occurs
+            results_raw <- reqs_raw |>
+              resps_data(
+                function(resp) {
+                  safe_resps_data(resp) # Apply the safe version of read_json_raw
                 }
-            combined_vector <- c(dicofre_2013, municipio_2013,  municipio_2002, nuts_3_2013, nuts_3_2002,  nuts_2_2013,  nuts_1_2013, pais)
-            
-            df_all <- df_all |> filter(geocod %in% combined_vector)
-            
-            if (any(c("Freguesia", "ACES", "ULS", "ARS", "Distrito") %in% groups_chosen) & (min(success) < 4 & 1 %in% success)) {
-              geo_chosen <- geo_reference[[1]]
-              df_all <- apply_filters(df_all, c("Município", "NUTS III", "NUTS II", "NUTS I", "País"), codes_reference,groups_chosen)
+              )
+
+            results <- map(results_raw$Dados, \(x) unpack_df(x)) |> list_rbind()
+            observation_available_names <- names(results_raw$Dados[[1]])
+            observation_available <- length(observation_available_names)
+            # Checks if the requested number of observations is available
+            if (observation_requested > observation_available) {
+              observation_used <- observation_available
+            } else {
+              observation_used <- observation_requested
             }
-            if (any(c("Município", "ACES", "ULS", "ARS", "Distrito") %in% groups_chosen) & (2 %in% success | min(success) == 2)) {
-              geo_chosen <- geo_reference[[2]]
-              df_all <- apply_filters(df_all, c("NUTS III", "NUTS II", "NUTS I", "País"), codes_reference,groups_chosen)
+            # Get names of the observations of interest
+            observation_used_names <- c(observation_available_names[
+              (observation_available -
+                observation_used +
+                1):(observation_available)
+            ])
+            if (!"obs" %in% names(results)) {
+              # If 'obs' doesn't exist, create the 'obs' column with the value "0000"
+              results <- results |> mutate(obs = "0000")
             }
-            if ("NUTS III" %in% groups_chosen & (4 %in% success | min(success) == 4)) {
-              df_all <- apply_filters(df_all, c("NUTS II", "NUTS I", "País"), codes_reference,groups_chosen)
-            }
-            if ("NUTS II" %in% groups_chosen & (6 %in% success | min(success) == 6)) {
-              df_all <- apply_filters(df_all, c("NUTS I", "País"), codes_reference,groups_chosen)
-            }
-            if ("NUTS I" %in% groups_chosen & (7 %in% success | min(success) == 7)) {
-              df_all <- apply_filters(df_all, c("País"), codes_reference,groups_chosen)
-            }
+            df_all <- results |>
+              dplyr::filter(obs %in% observation_available_names)
+
             result_list[[indicators_current]] <- df_all
+          }
+        }
+      } else {
+        # Extracts the data from  the INE API response
+        df_all <- data.frame()
+        results <- unpack_df(all$Dados[[1]])
+        observation_available_names <- names(all$Dados[[1]])
+        observation_available <- length(observation_available_names)
+        # Checks if the requested number of observations is available
+        if (observation_requested > observation_available) {
+          observation_used <- observation_available
+        } else {
+          observation_used <- observation_requested
+        }
+        # Get names of the observations of interest
+        observation_used_names <- c(observation_available_names[
+          (observation_available - observation_used + 1):(observation_available)
+        ])
+        if (!"obs" %in% names(results)) {
+          # If 'obs' doesn't exist, create the 'obs' column with the value "0000"
+          results <- results |> mutate(obs = "0000")
+        }
+
+        df_all <- results |>
+          dplyr::filter(obs %in% observation_available_names)
+
+        success <- c(10)
+        for (y in 1:length(level_test)) {
+          if ("Falso" %in% names(test$Sucesso[[y]])) {
+            next
+          } else {
+            success <- sort(c(success, y))
+          }
+        }
+        combined_vector <- c(
+          dicofre_2025,
+          dicofre_2013,
+          municipio_2024,
+          municipio_2013,
+          municipio_2002,
+          nuts_3_2024,
+          nuts_3_2013,
+          nuts_3_2002,
+          nuts_2_2024,
+          nuts_2_2013,
+          nuts_1_2013,
+          pais
+        )
+
+        df_all <- df_all |> filter(geocod %in% combined_vector)
+
+        if (
+          any(
+            c("Freguesia", "ACES", "ULS", "ARS", "Distrito", "Região") %in%
+              groups_chosen
+          ) &
+            (min(success) < 4 & 1 %in% success)
+        ) {
+          geo_chosen <- geo_reference[[1]] # referência da freguesia
+          df_all <- apply_filters(
+            df_all,
+            c("Município", "NUTS III", "NUTS II", "NUTS I", "País"),
+            codes_reference,
+            groups_chosen
+          )
+        }
+        if (
+          any(
+            c("Município", "ACES", "ULS", "ARS", "Distrito", "Região") %in%
+              groups_chosen
+          ) &
+            (2 %in% success | min(success) == 2)
+        ) {
+          geo_chosen <- geo_reference[[3]] # referência do município
+          df_all <- apply_filters(
+            df_all,
+            c("NUTS III", "NUTS II", "NUTS I", "País"),
+            codes_reference,
+            groups_chosen
+          )
+        }
+        if (
+          "NUTS III" %in% groups_chosen & (4 %in% success | min(success) == 4)
+        ) {
+          df_all <- apply_filters(
+            df_all,
+            c("NUTS II", "NUTS I", "País"),
+            codes_reference,
+            groups_chosen
+          )
+        }
+        if (
+          "NUTS II" %in% groups_chosen & (6 %in% success | min(success) == 6)
+        ) {
+          df_all <- apply_filters(
+            df_all,
+            c("NUTS I", "País"),
+            codes_reference,
+            groups_chosen
+          )
+        }
+        if (
+          "NUTS I" %in% groups_chosen & (7 %in% success | min(success) == 7)
+        ) {
+          df_all <- apply_filters(
+            df_all,
+            c("País"),
+            codes_reference,
+            groups_chosen
+          )
+        }
+        result_list[[indicators_current]] <- df_all
       }
-      if (any(c("Distrito", "ACES", "ARS", "ULS") %in% groups_chosen) & min(success) < 4) {
+      if (
+        any(c("Distrito", "ACES", "ARS", "ULS", "REGIAO") %in% groups_chosen) &
+          min(success) < 4
+      ) {
         level_names_success <- level_names_reference[min(success)]
         if ("Distrito" %in% groups_chosen) {
-          result_list[[indicators_current]] <- join_synthetic(result_list[[indicators_current]], "Distrito",level_names_success,selected_areas)
+          result_list[[indicators_current]] <- join_synthetic(
+            result_list[[indicators_current]],
+            "Distrito",
+            level_names_success,
+            selected_areas
+          )
         }
         if ("ACES" %in% groups_chosen) {
-          result_list[[indicators_current]] <- join_synthetic(result_list[[indicators_current]], "ACES",level_names_success,selected_areas)
+          result_list[[indicators_current]] <- join_synthetic(
+            result_list[[indicators_current]],
+            "ACES",
+            level_names_success,
+            selected_areas
+          )
         }
         if ("ULS" %in% groups_chosen) {
-          result_list[[indicators_current]] <- join_synthetic(result_list[[indicators_current]], "ULS",level_names_success,selected_areas)
+          result_list[[indicators_current]] <- join_synthetic(
+            result_list[[indicators_current]],
+            "ULS",
+            level_names_success,
+            selected_areas
+          )
+        }
+        if ("REGIAO" %in% groups_chosen) {
+          result_list[[indicators_current]] <- join_synthetic(
+            result_list[[indicators_current]],
+            "REGIAO",
+            level_names_success,
+            selected_areas
+          )
         }
         if ("ARS" %in% groups_chosen) {
-          result_list[[indicators_current]] <- join_synthetic(result_list[[indicators_current]], "ARS",level_names_success,selected_areas)
+          result_list[[indicators_current]] <- join_synthetic(
+            result_list[[indicators_current]],
+            "ARS",
+            level_names_success,
+            selected_areas
+          )
         }
       } 
       if(!"valor" %in% names(result_list[[indicators_current]])){
@@ -407,7 +607,8 @@ chosen_group_options <- NULL
 ui <- fluidPage(
   # Include custom CSS
   tags$head(
-    tags$style(HTML("
+    tags$style(HTML(
+      "
     /* Style for larger screens */
     .responsive-row {
       display: flex; /* Establish flex container */
@@ -425,162 +626,166 @@ ui <- fluidPage(
         float: none; /* Float is not needed with flexbox */
       }
     }
-  ")),
+  "
+    )),
   ),
   navbarPage(
-  theme = bs_theme(base_font = font_google("Lato"),
-  font_scale = -0.8, `enable-gradients` = TRUE, `enable-shadows` = TRUE
-  ,spacer = "0.3rem", bootswatch = "minty"),
-  # theme = bs_theme(), 
-  # Change theme at will must activate bs_themer() in server
-  "Extrator INE v0.43",
-  nav_panel(
-    "Extração de dados",
-    useShinyjs(),
-    fluidRow(
-      class = "responsive-row",
-      column(
-        width = 4,align = "left",height = 60,
-        imageOutput("sns_img1", height = "60px")
-      ),
-      column(
-        width = 4,align = "left",height = 60,
-        imageOutput("dgs_img1", height = "60px")
-      ),
-      column(
-        width = 4,align = "left",height = 60,
-        imageOutput("ine_img1", height = "60px")
-      )
+    theme = bs_theme(
+      base_font = font_google("Lato"),
+      font_scale = -0.8,
+      `enable-gradients` = TRUE,
+      `enable-shadows` = TRUE,
+      spacer = "0.3rem",
+      bootswatch = "minty"
     ),
-    sidebarLayout(
-      sidebarPanel(
-        br(),
-        sliderInput(
-          "observation_slider",
-          "Número de observações a pedir:",
-          min = 1,
-          max = 20,
-          value = 1
-        ) |> tooltip("Se não houver dados do número pedido, é extraído o máximo."),
-        # p("Se não houver dados do número pedido, é extraído o máximo."),
-        actionButton("go", "Submeter", class = "btn-primary"),
-        actionButton("stop", "Reiniciar", class = "btn-primary"),
-        # Search bar for indicator
-        selectizeInput(
-          "indicators_search",
-          "Selecionar indicadores:",
-          choices = NULL,
-          multiple = TRUE
-        ) |> tooltip("Indicadores atualizados em 2023-03-06"),
-        # p("Indicadores atualizados em 2023-03-06"),
-        # Search bar for desagregação
-        selectInput(
-          "chosen_group_dropdown",
-          "Nível geográfico:",
-          choices = c(
-            "Freguesia",
-            "Município",
-            "Distrito",
-            "NUTS III",
-            "NUTS II",
-            "NUTS I",
-            "País",
-            "ACES",
-            "ULS",
-            "ARS"
-          )
-        ) |> tooltip(
-          "Se não houver dados do pedido, será extraído o mais próximo possível."
+    # theme = bs_theme(),
+    # Change theme at will must activate bs_themer() in server
+    "Extrator de Indicadores do INE",
+    nav_panel(
+      "Extração de dados",
+      useShinyjs(),
+      layout_sidebar(
+        sidebar = sidebar(
+          accordion(
+            accordion_panel(
+              "1. Seleção de Indicadores",
+              selectizeInput(
+                "indicators_search",
+                "Selecionar indicadores:",
+                choices = NULL,
+                multiple = TRUE
+              ) |>
+                tooltip("Indicadores atualizados em 2025-05-12"),
+              sliderInput(
+                "observation_slider",
+                "Número de observações a pedir:",
+                min = 1,
+                max = 20,
+                value = 1
+              ) |>
+                tooltip(
+                  "Se não houver dados do número pedido, é extraído o máximo."
+                )
+            ),
+            accordion_panel(
+              "2. Seleção Geográfica",
+              selectInput(
+                "chosen_group_dropdown",
+                "Nível geográfico:",
+                choices = c(
+                  "Freguesia",
+                  "Município",
+                  "Distrito",
+                  "NUTS III",
+                  "NUTS II",
+                  "NUTS I",
+                  "País",
+                  "ACES",
+                  "Região",
+                  "ULS",
+                  "ARS"
+                )
+              ) |>
+                tooltip(
+                  "Se não houver dados do pedido, será extraído o mais próximo possível."
+                ),
+              checkboxInput("select_all_checkbox", "Selecionar todos", FALSE),
+              uiOutput("chosen_items_search")
+            ),
+            accordion_panel(
+              "3. Opções de Saída",
+              p("Se Extração Normal falhar, tentar extração individual"),
+              checkboxInput("individual_checkbox", "Extração individual", FALSE) |>
+                tooltip(
+                  "Aumenta tempo de extração mas útil em indicadores com múltiplas dimensões com extração completa que não inclua níveis mais pequenos."
+                ),
+              checkboxInput(
+                "other_groups_checkbox",
+                "Agrupar resultados por outros níveis",
+                FALSE
+              ),
+              uiOutput("other_groups_search"),
+              checkboxInput("graficos_checkbox", "Fazer Gráficos", FALSE),
+              checkboxInput("meta_checkbox", "Pedir Metainformação", FALSE),
+              checkboxInput(
+                "show_debug",
+                "Painel debug",
+                FALSE
+              )
+            )
+          ),
+          actionButton("go", "Submeter", class = "btn-primary"),
+          actionButton("stop", "Reiniciar", class = "btn-primary")
         ),
-        # p(
-        #   "Se não houver dados do pedido, será extraído o mais próximo possível."
-        # ),
-        checkboxInput("select_all_checkbox", "Selecionar todos", FALSE),
-        # Dropdown for additional desagregação options
-        uiOutput("chosen_items_search"),
-        p("Se Extração Normal falhar, tentar extração individual"),
-        checkboxInput("individual_checkbox",
-                      "Extração individual",
-                      FALSE)|> tooltip("Aumenta tempo de extração mas útil em indicadores com múltiplas dimensões com extração completa que não inclua níveis mais pequenos."),
-        # p("Aumenta tempo de extração mas útil em indicadores com múltiplas dimensões com extração completa que não inclua níveis mais pequenos."),
-        checkboxInput(
-          "other_groups_checkbox",
-          "Agrupar resultados por outros níveis",
-          FALSE
+        # Show a plot of the generated distribution
+        layout_columns(
+          col_widths = c(4, 4, 4),
+          imageOutput("sns_img1", height = "60px"),
+          imageOutput("dgs_img1", height = "60px"),
+          imageOutput("ine_img1", height = "60px")
         ),
-        uiOutput("other_groups_search"),
-        checkboxInput("graficos_checkbox",
-                      "Fazer Gráficos",
-                      FALSE),
-        checkboxInput("meta_checkbox",
-                      "Pedir Metainformação",
-                      FALSE),
-        checkboxInput(
-          "show_debug",
-          "Painel debug",
-          FALSE
-        )
-      ,width = 3),
-      # Show a plot of the generated distribution
-      mainPanel(
         uiOutput("debug_panel_checkbox"),
         h2("Dados Recolhidos pelo Extractor"),
         uiOutput("error"),
-        withSpinner(uiOutput("results_table"),type = 5, color = "#78C2AD", hide.ui = T)
-      ,width = 9)
-    )
-  ),
-  nav_panel(
-    "Sobre",
-    fluidRow(
-      class = "responsive-row",
-      column(
-        width = 4,align = "left",height = 60,
-        imageOutput("sns_img2", height = "60px")
-      ),
-      column(
-        width = 4,align = "left",height = 60,
-        imageOutput("dgs_img2", height = "60px")
-      ),
-      column(
-        width = 4,align = "left",height = 60,
-        imageOutput("ine_img2", height = "60px")
+        withSpinner(
+          uiOutput("results_table"),
+          type = 5,
+          color = "#78C2AD",
+          hide.ui = T
+        )
       )
     ),
-    sidebarLayout(
-      sidebarPanel(
-        h4(strong("Autoria")),
-        h4(
-          strong("João Dionísio, Rafael Vasconcelos")
+    nav_panel(
+      "Sobre",
+      sidebarLayout(
+        sidebarPanel(
+          h4(strong("Autoria")),
+          h4(
+            strong("João Dionísio, Rafael Vasconcelos")
+          )
+        ),
+        mainPanel(
+          h3("Próximas melhorias"),
+          p(
+            "- Corrigir o cálculo dos indicadores para distrito, ACES, ULS ARS quando não são contagens;"
+          ),
+          p(
+            "- Remoção das variáveis para cálculo de dimensões não administrativas do INE (Distrito, ACES e ARS) - Para já deixo como validação"
+          ),
+          p("- Automatizar a procura dos indicadores disponíveis;"),
+          p("- Melhoria na manipulação de variáveis e visualizações;"),
+          p(
+            "- Indicadores base em datasets base para evitar extração INE constante."
+          ),
+          br(),
+          h2("Changelog"),
+          h3("V0.5"),
+          h4("2025-11-12"),
+          p("- Otimização de código para as novas divisões"),
+          h3("V0.43"),
+          h4("2024-06-16"),
+          p("- Otimização de código para maior velocidade"),
+          h3("V0.42"),
+          h4("2024-03-27"),
+          p("- Otimização de pesquisa de indicadores contínua;"),
+          p("- Ponderar remoção do botão de reiniciar - manter para já"),
+          p("- Corecção do mapeamento por ULS"),
+          p(
+            "- Resolução de bug em que a seleção de todos os locais não permitia extração"
+          ),
+          h4("Bugs Conhecidos"),
+          h4("Em 2024-06-16"),
+          p(
+            "- Problema na escolha de várias agregações superiores e inferiores que não permite filtro só do que foi pedido;"
+          ),
+          p("- Falha na conexão ao INE não dá feedback ao utilizador"),
+          p(
+            "- Extrações de todas as freguesias do país em múltiplos indicadores leva a quebra do sistema."
+          )
         )
-      ),
-      mainPanel(
-        h3("Próximas melhorias"),
-        p("- Corrigir o cálculo dos indicadores para distrito, ACES, ULS ARS quando não são contagens;"),
-        p("- Remoção das variáveis para cálculo de dimensões não administrativas do INE (Distrito, ACES e ARS) - Para já deixo como validação"),
-        p("- Automatizar a procura dos indicadores disponíveis;"),
-        p("- Melhoria na manipulação de variáveis e visualizações;"),
-        p("- Indicadores base em datasets base para evitar extração INE constante."),
-        br(),
-        h2("Changelog"),
-        h3("V0.43"),
-        h4("2024-06-16"),
-        p("- Otimização de código para maior velocidade"),
-        h3("V0.42"),
-        h4("2024-03-27"),
-        p("- Otimização de pesquisa de indicadores contínua;"),
-        p("- Ponderar remoção do botão de reiniciar - manter para já"),
-        p("- Corecção do mapeamento por ULS"),
-        p("- Resolução de bug em que a seleção de todos os locais não permitia extração"),
-        h4("Bugs Conhecidos"),
-        h4("Em 2024-06-16"),
-        p("- Problema na escolha de várias agregações superiores e inferiores que não permite filtro só do que foi pedido;"),
-		    p("- Falha na conexão ao INE não dá feedback ao utilizador"),
-        p("- Extrações de todas as freguesias do país em múltiplos indicadores leva a quebra do sistema.")
       )
     )
   )
-)
 )
 #
 server <- function(input, output, session) {
@@ -622,24 +827,6 @@ server <- function(input, output, session) {
     },
     deleteFile = F
   )
-  output$dgs_img2 <- renderImage(
-    {
-      list(
-        src = "www/DGS.png",
-        height = 60
-      )
-    },
-    deleteFile = F
-  )
-  output$ine_img2 <- renderImage(
-    {
-      list(
-        src = "www/INE.gif",
-        height = 60
-      )
-    },
-    deleteFile = F
-  )
   # Update the choices for the indicators search based on the text input
   updateSelectizeInput(
     session,
@@ -665,14 +852,17 @@ server <- function(input, output, session) {
   # Retrieves the list of available items for the chosen geographic level
   # Update chosen_group_options() whenever input$chosen_group_dropdown changes
   observeEvent(selected_input(), {
-    if (input$chosen_group_dropdown == "Freguesia") {
-      chosen_group_options$available_items <- geo_lookup$freguesia_2013
+    if (input$chosen_group_dropdown == "Freguesia 2025") {
+      chosen_group_options$available_items <- geo_lookup$freguesia_2025
     } else if (input$chosen_group_dropdown == "Município") {
       chosen_group_options$available_items <- geo_lookup$municipio_2013
     } else if (input$chosen_group_dropdown == "Distrito") {
       chosen_group_options$available_items <- geo_lookup$distrito_2013
     } else if (input$chosen_group_dropdown == "NUTS III") {
-      chosen_group_options$available_items <- geo_lookup$nuts3_2013
+      chosen_group_options$available_items <- unique(c(
+        geo_lookup$nuts3_2024,
+        geo_lookup$nuts3_2013
+      ))
     } else if (input$chosen_group_dropdown == "NUTS II") {
       chosen_group_options$available_items <- geo_lookup$nuts2_2013
     } else if (input$chosen_group_dropdown == "NUTS I") {
@@ -681,8 +871,10 @@ server <- function(input, output, session) {
       chosen_group_options$available_items <- geo_lookup$pais
     } else if (input$chosen_group_dropdown == "ACES") {
       chosen_group_options$available_items <- geo_lookup$aces_2022
-    }else if (input$chosen_group_dropdown == "ULS") {
-      chosen_group_options$available_items <- geo_lookup$uls_2023
+    } else if (input$chosen_group_dropdown == "ULS") {
+      chosen_group_options$available_items <- geo_lookup$uls_2024
+    } else if (input$chosen_group_dropdown == "Região") {
+      chosen_group_options$available_items <- geo_lookup$regiao_2024
     } else if (input$chosen_group_dropdown == "ARS") {
       chosen_group_options$available_items <- geo_lookup$ars_2022
     }
@@ -723,16 +915,17 @@ server <- function(input, output, session) {
       )
     } else {
       updateSelectizeInput(
-            session,
-            "chosen_items",
-            choices = chosen_group_options$available_items,
-            options = list(
-              placeholder = "Barra de pesquisa",
-              create = FALSE,
-              multiple = TRUE
-            ),
-            server = TRUE
-          )
+        session,
+        "chosen_items",
+        choices = chosen_group_options$available_items,
+        options = list(
+          placeholder = "Barra de pesquisa",
+          create = FALSE,
+          multiple = TRUE,
+          maxOptions = 4000
+        ),
+        server = TRUE
+      )
     }
   })
   # Update the dropdown menu whenever available_items changes
@@ -797,6 +990,7 @@ server <- function(input, output, session) {
           "NUTS I",
           "País",
           "ACES",
+          "Região",
           "ULS"
         )
     } else if (input$chosen_group_dropdown == "Município") {
@@ -810,6 +1004,7 @@ server <- function(input, output, session) {
           "País",
           "ACES",
           "ULS",
+          "Região",
           "ARS"
         )
     } else if (input$chosen_group_dropdown == "Distrito") {
@@ -817,7 +1012,8 @@ server <- function(input, output, session) {
         c(
           "Freguesia",
           "Município",
-          "ARS"# ,
+          "Região",
+          "ARS" # ,
           # "NUTS III",
           # "NUTS II",
           # "NUTS I",
@@ -873,6 +1069,7 @@ server <- function(input, output, session) {
           "NUTS II",
           "NUTS I",
           "País", # ,
+          "Região",
           "ARS"
         )
     } else if (input$chosen_group_dropdown == "ARS") {
@@ -886,6 +1083,7 @@ server <- function(input, output, session) {
           "NUTS I",
           "País",
           "ACES",
+          "Região",
           "ULS"
         )
     } else if (input$chosen_group_dropdown == "ULS") {
@@ -899,6 +1097,7 @@ server <- function(input, output, session) {
           "NUTS I",
           "País",
           "ACES",
+          "Região",
           "ARS"
         )
     }
@@ -922,32 +1121,81 @@ server <- function(input, output, session) {
   # Create a reactive function for the focused area codes
   filtered_area <- reactive({
   if(isFALSE(input$select_all_checkbox)){
-    if(is.null(input$other_groups_list)|(!("Distrito"%in%input$other_groups_list)&!("ACES"%in%input$other_groups_list)&!("ARS"%in%input$other_groups_list)&!("ULS"%in%input$other_groups_list))){
-    
-	filtered <-
-      geo_lookup |> filter(chosen_group_options$available_items %in% input$chosen_items)
-
-    # Sets lists of codes for debug panel
-    f_freguesia <- filtered |>
-      pull(dicofre_2013) |>
-      unique()
-    f_municipio_2013 <- filtered |>
-      pull(municipio_2013_cod) |>
-      unique()
-    f_municipio_2002 <- filtered |>
-      pull(municipio_2002_cod) |>
-      unique()
-    return(
-      list(
-        filtered_table = filtered,
-        f_freguesia = f_freguesia,
-        f_municipio_2013 = f_municipio_2013,
-        f_municipio_2002 = f_municipio_2002
-      )
-    )
-    }else if("ARS" %in% input$other_groups_list){
+    if (
+      is.null(input$other_groups_list) |
+        (!("Distrito" %in% input$other_groups_list) &
+          !("ACES" %in% input$other_groups_list) &
+          !("Região" %in% input$other_groups_list) &
+          !("ARS" %in% input$other_groups_list) &
+          !("ULS" %in% input$other_groups_list))
+    ) {
       filtered <-
-        geo_lookup |> filter(chosen_group_options$available_items %in% input$chosen_items)
+        geo_lookup |>
+        filter(chosen_group_options$available_items %in% input$chosen_items)
+
+      # Sets lists of codes for debug panel
+      f_freguesia_2025 <- filtered |>
+        pull(dicofre_2025) |>
+        unique()
+      f_freguesia_2013 <- filtered |>
+        pull(dicofre_2013) |>
+        unique()
+      f_municipio_2024 <- filtered |>
+        pull(municipio_2024_cod) |>
+        unique()
+      f_municipio_2013 <- filtered |>
+        pull(municipio_2013_cod) |>
+        unique()
+      f_municipio_2002 <- filtered |>
+        pull(municipio_2002_cod) |>
+        unique()
+      return(
+        list(
+          filtered_table = filtered,
+          f_freguesia_2025 = f_freguesia_2025,
+          f_freguesia_2013 = f_freguesia_2013,
+          f_municipio_2024 = f_municipio_2024,
+          f_municipio_2013 = f_municipio_2013,
+          f_municipio_2002 = f_municipio_2002
+        )
+      )
+    } else if ("Distrito" %in% input$other_groups_list) {
+      filtered <-
+        geo_lookup |>
+        filter(chosen_group_options$available_items %in% input$chosen_items)
+      extra <- unique(filtered$distrito_2013)
+      filtered <-
+        geo_lookup |> filter(distrito_2013 %in% extra)
+      # Sets lists of codes for debug panel
+      f_freguesia_2025 <- filtered |>
+        pull(dicofre_2025) |>
+        unique()
+      f_freguesia_2013 <- filtered |>
+        pull(dicofre_2013) |>
+        unique()
+      f_municipio_2024 <- filtered |>
+        pull(municipio_2024_cod) |>
+        unique()
+      f_municipio_2013 <- filtered |>
+        pull(municipio_2013_cod) |>
+        unique()
+      f_municipio_2002 <- filtered |>
+        pull(municipio_2002_cod) |>
+        unique()
+      return(
+        list(
+          filtered_table = filtered,
+          f_freguesia_2025 = f_freguesia_2025,
+          f_freguesia_2013 = f_freguesia_2013,
+          f_municipio_2024 = f_municipio_2024,
+          f_municipio_2013 = f_municipio_2013,
+          f_municipio_2002 = f_municipio_2002
+        )
+      )
+    } else if ("ARS" %in% input$other_groups_list) {
+      filtered <-
+        geo_lookup |>
+        filter(chosen_group_options$available_items %in% input$chosen_items)
       extra <- unique(filtered$ars_2022)
       extra1 <- unique(filtered$ars_2022_cod)
       # if("Distrito"%in% input$other_groups_list){
@@ -961,8 +1209,14 @@ server <- function(input, output, session) {
       filtered <-
         geo_lookup |> filter(ars_2022 %in% extra)
       # Sets lists of codes for debug panel
-      f_freguesia <- filtered |>
+      f_freguesia_2025 <- filtered |>
+        pull(dicofre_2025) |>
+        unique()
+      f_freguesia_2013 <- filtered |>
         pull(dicofre_2013) |>
+        unique()
+      f_municipio_2024 <- filtered |>
+        pull(municipio_2024_cod) |>
         unique()
       f_municipio_2013 <- filtered |>
         pull(municipio_2013_cod) |>
@@ -970,21 +1224,23 @@ server <- function(input, output, session) {
       f_municipio_2002 <- filtered |>
         pull(municipio_2002_cod) |>
         unique()
-
       return(
         list(
           filtered_table = filtered,
-          f_freguesia = f_freguesia,
+          f_freguesia_2025 = f_freguesia_2025,
+          f_freguesia_2013 = f_freguesia_2013,
+          f_municipio_2024 = f_municipio_2024,
           f_municipio_2013 = f_municipio_2013,
           f_municipio_2002 = f_municipio_2002,
-          extra1=extra1
+          extra1 = extra1
           # extra2=extra2,
           # extra3=extra3
         )
       )
-    }else if("Distrito"%in%input$other_groups_list){
+    } else if ("Distrito" %in% input$other_groups_list) {
       filtered <-
-        geo_lookup |> filter(chosen_group_options$available_items %in% input$chosen_items)
+        geo_lookup |>
+        filter(chosen_group_options$available_items %in% input$chosen_items)
       extra <- unique(filtered$distrito_2013)
       extra1 <- unique(filtered$distrito_2013_cod)
       # if("ARS"%in%input$other_groups_list){
@@ -994,8 +1250,14 @@ server <- function(input, output, session) {
       filtered <-
         geo_lookup |> filter(distrito_2013 %in% extra)
       # Sets lists of codes for debug panel
-      f_freguesia <- filtered |>
+      f_freguesia_2025 <- filtered |>
+        pull(dicofre_2025) |>
+        unique()
+      f_freguesia_2013 <- filtered |>
         pull(dicofre_2013) |>
+        unique()
+      f_municipio_2024 <- filtered |>
+        pull(municipio_2024_cod) |>
         unique()
       f_municipio_2013 <- filtered |>
         pull(municipio_2013_cod) |>
@@ -1003,84 +1265,101 @@ server <- function(input, output, session) {
       f_municipio_2002 <- filtered |>
         pull(municipio_2002_cod) |>
         unique()
-
       return(
         list(
           filtered_table = filtered,
-          f_freguesia = f_freguesia,
+          f_freguesia_2025 = f_freguesia_2025,
+          f_freguesia_2013 = f_freguesia_2013,
+          f_municipio_2024 = f_municipio_2024,
           f_municipio_2013 = f_municipio_2013,
           f_municipio_2002 = f_municipio_2002,
-          extra1=extra1
+          extra1 = extra1
           # extra2=extra2,
           # extra3=extra3
         )
       )
-  }else if("ACES"%in%input$other_groups_list){
-    filtered <-
-      geo_lookup |> filter(chosen_group_options$available_items %in% input$chosen_items)
-    extra <- unique(filtered$aces_2022)
-    extra1 <- unique(filtered$aces_2022_cod)
-    # if("ARS"%in%input$other_groups_list){
-    #   extra2 <- unique(filtered$ars_2022_cod)}else{extra2 <- c()        }
-    # if("Distrito"%in%input$other_groups_list){
-    #   extra3 <- unique(filtered$distrito_2013_cod)}else{extra3 <- c()        }
-    filtered <-geo_lookup |> filter(aces_2022 %in% extra)
-    # Sets lists of codes for debug panel
-    f_freguesia <- filtered |>
-      pull(dicofre_2013) |>
-      unique()
-    f_municipio_2013 <- filtered |>
-      pull(municipio_2013_cod) |>
-      unique()
-    f_municipio_2002 <- filtered |>
-      pull(municipio_2002_cod) |>
-      unique()
-    return(
-      list(
-        filtered_table = filtered,
-        f_freguesia = f_freguesia,
-        f_municipio_2013 = f_municipio_2013,
-        f_municipio_2002 = f_municipio_2002,
-        extra1=extra1
-        # extra2=extra2,
-        # extra3=extra3
+    } else if ("ACES" %in% input$other_groups_list) {
+      filtered <-
+        geo_lookup |>
+        filter(chosen_group_options$available_items %in% input$chosen_items)
+      extra <- unique(filtered$aces_2022)
+      extra1 <- unique(filtered$aces_2022_cod)
+      # if("ARS"%in%input$other_groups_list){
+      #   extra2 <- unique(filtered$ars_2022_cod)}else{extra2 <- c()        }
+      # if("Distrito"%in%input$other_groups_list){
+      #   extra3 <- unique(filtered$distrito_2013_cod)}else{extra3 <- c()        }
+      filtered <- geo_lookup |> filter(aces_2022 %in% extra)
+      # Sets lists of codes for debug panel
+      f_freguesia_2025 <- filtered |>
+        pull(dicofre_2025) |>
+        unique()
+      f_freguesia_2013 <- filtered |>
+        pull(dicofre_2013) |>
+        unique()
+      f_municipio_2024 <- filtered |>
+        pull(municipio_2024_cod) |>
+        unique()
+      f_municipio_2013 <- filtered |>
+        pull(municipio_2013_cod) |>
+        unique()
+      f_municipio_2002 <- filtered |>
+        pull(municipio_2002_cod) |>
+        unique()
+      return(
+        list(
+          filtered_table = filtered,
+          f_freguesia_2025 = f_freguesia_2025,
+          f_freguesia_2013 = f_freguesia_2013,
+          f_municipio_2024 = f_municipio_2024,
+          f_municipio_2013 = f_municipio_2013,
+          f_municipio_2002 = f_municipio_2002,
+          extra1 = extra1
+          # extra2=extra2,
+          # extra3=extra3
+        )
       )
-    )
-    
-  }else if("ULS"%in%input$other_groups_list){
-    filtered <-
-      geo_lookup |> filter(chosen_group_options$available_items %in% input$chosen_items)
-    extra <- unique(filtered$uls_2023)
-    # extra1 <- unique(filtered$aces_2022_cod)
-    # if("ARS"%in%input$other_groups_list){
-    #   extra2 <- unique(filtered$ars_2022_cod)}else{extra2 <- c()        }
-    # if("Distrito"%in%input$other_groups_list){
-    #   extra3 <- unique(filtered$distrito_2013_cod)}else{extra3 <- c()        }
-    filtered <-
-      geo_lookup |> filter(uls_2023 %in% extra)
-    # Sets lists of codes for debug panel
-    f_freguesia <- filtered |>
-      pull(dicofre_2013) |>
-      unique()
-    f_municipio_2013 <- filtered |>
-      pull(municipio_2013_cod) |>
-      unique()
-    f_municipio_2002 <- filtered |>
-      pull(municipio_2002_cod) |>
-      unique()
-    return(
-      list(
-        filtered_table = filtered,
-        f_freguesia = f_freguesia,
-        f_municipio_2013 = f_municipio_2013,
-        f_municipio_2002 = f_municipio_2002,
-        extra1="NA"
-        # extra2=extra2,
-        # extra3=extra3
+    } else if ("ULS" %in% input$other_groups_list) {
+      filtered <-
+        geo_lookup |>
+        filter(chosen_group_options$available_items %in% input$chosen_items)
+      extra <- unique(filtered$uls_2023)
+      # extra1 <- unique(filtered$aces_2022_cod)
+      # if("ARS"%in%input$other_groups_list){
+      #   extra2 <- unique(filtered$ars_2022_cod)}else{extra2 <- c()        }
+      # if("Distrito"%in%input$other_groups_list){
+      #   extra3 <- unique(filtered$distrito_2013_cod)}else{extra3 <- c()        }
+      filtered <-
+        geo_lookup |> filter(uls_2023 %in% extra)
+      # Sets lists of codes for debug panel
+      f_freguesia_2025 <- filtered |>
+        pull(dicofre_2025) |>
+        unique()
+      f_freguesia_2013 <- filtered |>
+        pull(dicofre_2013) |>
+        unique()
+      f_municipio_2024 <- filtered |>
+        pull(municipio_2024_cod) |>
+        unique()
+      f_municipio_2013 <- filtered |>
+        pull(municipio_2013_cod) |>
+        unique()
+      f_municipio_2002 <- filtered |>
+        pull(municipio_2002_cod) |>
+        unique()
+      return(
+        list(
+          filtered_table = filtered,
+          f_freguesia_2025 = f_freguesia_2025,
+          f_freguesia_2013 = f_freguesia_2013,
+          f_municipio_2024 = f_municipio_2024,
+          f_municipio_2013 = f_municipio_2013,
+          f_municipio_2002 = f_municipio_2002,
+          extra1 = NA,
+          # extra2=extra2,
+          # extra3=extra3
+        )
       )
-    )
-    
-  }
+    }
   } else{
 	filtered <-
       geo_lookup
@@ -1090,8 +1369,14 @@ server <- function(input, output, session) {
     # if("Distrito"%in%input$other_groups_list){
     #   extra3 <- unique(filtered$distrito_2013_cod)}else{extra3 <- c()        }
     # Sets lists of codes for debug panel
-    f_freguesia <- filtered |>
+    f_freguesia_2025 <- filtered |>
+      pull(dicofre_2025) |>
+      unique()
+    f_freguesia_2013 <- filtered |>
       pull(dicofre_2013) |>
+      unique()
+    f_municipio_2024 <- filtered |>
+      pull(municipio_2024_cod) |>
       unique()
     f_municipio_2013 <- filtered |>
       pull(municipio_2013_cod) |>
@@ -1099,17 +1384,19 @@ server <- function(input, output, session) {
     f_municipio_2002 <- filtered |>
       pull(municipio_2002_cod) |>
       unique()
-    return(
-      list(
-        filtered_table = filtered,
-        f_freguesia = f_freguesia,
-        f_municipio_2013 = f_municipio_2013,
-        f_municipio_2002 = f_municipio_2002,
-        extra1="NA"
-        # extra2=extra2,
-        # extra3=extra3
+      return(
+        list(
+          filtered_table = filtered,
+          f_freguesia_2025 = f_freguesia_2025,
+          f_freguesia_2013 = f_freguesia_2013,
+          f_municipio_2024 = f_municipio_2024,
+          f_municipio_2013 = f_municipio_2013,
+          f_municipio_2002 = f_municipio_2002,
+          extra1 = NA,
+          # extra2=extra2,
+          # extra3=extra3
+        )
       )
-    )
   }
   })
   # Create a reactive function to ge the chosen indicator codes
@@ -1128,7 +1415,7 @@ server <- function(input, output, session) {
     filtered_indicators()
   })
   output$filtered_freguesia <- renderPrint({
-    filtered_area()$f_freguesia
+    filtered_area()$f_freguesia_2025
   })
   output$filtered_municipio_2013 <- renderPrint({
     filtered_area()$f_municipio_2013
@@ -1144,45 +1431,102 @@ server <- function(input, output, session) {
   })
   #
   result_list_reactive <- reactiveVal()
-
   meta_list_reactive <- reactiveVal()
-  #
   dimmension_chosen <- reactiveVal()
 
-  result_list_processed <- eventReactive(input$go, {
-        result_list <- result_list
-    if (length(filtered_indicators()) != 0 & nrow(filtered_area()$filtered_table) != 0) {
-      # Replace this with your actual data fetching function
-      result_list_updated <- ine.get(indicators = filtered_indicators(),selected_areas = filtered_area()$filtered_table, observation_requested = input$observation_slider,result_list = result_list,
-                                     geo_reference = geo_reference,
-                                     groups_chosen = input$chosen_group_dropdown,
-                                     groups_other = input$other_groups_list,
-                                     individual = input$individual_checkbox
-      )
-      return(result_list_reactive(result_list_updated))
-      dimmension_chosen(c(input$other_groups_list, input$chosen_group_dropdown))
-    } else {
-      # Enable inputs
+  observeEvent(input$stop, {
+    output$results_table <- NULL
+  }, ignoreNULL = TRUE)
+
+  observeEvent(input$go, {
+    output$error <- renderUI({
+      # Disable inputs
+      shinyjs::disable(selector = "input")
+      shinyjs::disable(selector = "select")
+      shinyjs::disable(selector = "button")
+
+      if (length(filtered_indicators()) == 0) {
+        return(tagList(
+          br(),
+          h1(strong("Não foi pedido nenhum indicador")),
+          br()
+        ))
+      }
+      if (nrow(filtered_area()$filtered_table) == 0) {
+        return(tagList(
+          br(),
+          h1(strong("Não foi pedida nenhuma desagregação")),
+          br()
+        ))
+      }
       NULL
-    } 
-  })
-  
-meta_list_processed <- eventReactive(input$go, {
-     meta_list <- meta_list
-    if(input$meta_checkbox) {
-      # Replace this with your actual metadata fetching function
+    })
+
+    # Extract data from INE using the inputs from the UI
+    if (length(filtered_indicators()) != 0 && nrow(filtered_area()$filtered_table) != 0) {
+      result_list_updated <- ine.get(
+        indicators = filtered_indicators(),
+        selected_areas = filtered_area()$filtered_table,
+        observation_requested = input$observation_slider,
+        result_list = result_list,
+        geo_reference = geo_reference,
+        groups_chosen = input$chosen_group_dropdown,
+        groups_other = input$other_groups_list,
+        individual = input$individual_checkbox,
+        all = input$select_all_checkbox
+      )
+      result_list_reactive(result_list_updated)
+      dimmension_chosen(c(input$other_groups_list, input$chosen_group_dropdown))
+
+      if (input$meta_checkbox) {
         meta_list_updated <- ine.meta(
           indicators = filtered_indicators(),
           meta_list = meta_list
         )
-        return(meta_list_reactive(meta_list_updated))
-    } else {
-      NULL
+        meta_list_reactive(meta_list_updated)
+      }
     }
-  }, ignoreNULL = TRUE)
-  
-  output$results_table <- NULL
-  #
+
+    shinyjs::enable(selector = "input")
+    shinyjs::enable(selector = "select")
+    shinyjs::enable(selector = "button")
+  })
+
+  output$results_table <- renderUI({
+    req(result_list_reactive())
+    items <- names(result_list_reactive())
+
+    tabs <- lapply(items, function(item) {
+      full_name <- indicators$designacao[indicators$codigo_de_difusao == item]
+      title <- substr(full_name, 1, 20)
+      if (length(full_name) == 0) {
+        full_name <- item
+        title <- item
+      } else {
+        full_name <- full_name[1]
+      }
+
+      nav_panel(
+        title,
+        h4(strong(full_name)),
+        DTOutput(paste0(item, "_table")),
+        downloadButton(paste0(item, "_download"), paste0(item, ".csv")),
+        if (input$graficos_checkbox == TRUE) {
+          tagList(
+            plotOutput(paste0(item, "_plot")),
+            plotlyOutput(paste0(item, "_plotly")),
+            plotOutput(paste0(item, "_plot1"), height = "1200px", width = "auto")
+          )
+        },
+        if (input$meta_checkbox == TRUE) {
+          req(meta_list_reactive())
+          downloadButton(paste0(item, "meta", "_download"), paste0(item, "meta", ".csv"))
+        }
+      )
+    })
+    do.call(navset_card_tab, tabs)
+  })
+
 observeEvent(input$stop,{
   output$results_table <- NULL
 }, ignoreNULL = TRUE)
@@ -1206,7 +1550,10 @@ eventReactive(input$go,{
       nrow(filtered_area()$filtered_table) != 0) {
       # Render the tabs based on the reactive value
       output$results_table <- renderUI({
-        result_list_updated <- ine.get(indicators = filtered_indicators(),selected_areas = filtered_area()$filtered_table, observation_requested = input$observation_slider,result_list = result_list,
+        result_list_updated <- ine.get(indicators = filtered_indicators(),
+                                       selected_areas = filtered_area()$filtered_table, 
+                                       observation_requested = input$observation_slider,
+                                       result_list = result_list,
                                        geo_reference = geo_reference,
                                        groups_chosen = input$chosen_group_dropdown,
                                        groups_other = input$other_groups_list,
