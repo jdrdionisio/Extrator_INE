@@ -44,14 +44,24 @@ geo_reference <- list(
   ars_2022 = geo_lookup[c(5:10, 17:37)]
 )
 # Retrieve the available indicators
-temp_file <- tempfile(fileext = ".xlsx")
-req <- httr2::request("https://smi.ine.pt/Indicador/Exportacao?tipo=0") |>
-  httr2::req_perform(path = temp_file)
+tryCatch(
+  {
+    temp_file <- tempfile(fileext = ".xlsx")
+    req <- httr2::request("https://smi.ine.pt/Indicador/Exportacao?tipo=0") |>
+      httr2::req_perform(path = temp_file)
 
-indicators <- read_excel(temp_file, skip = 14) |>
-  clean_names() |>
-  filter(disponivel_no_portal == "Sim") |>
-  distinct(designacao, .keep_all = TRUE)
+    indicators <- read_excel(temp_file, skip = 14) |>
+      clean_names() |>
+      filter(disponivel_no_portal == "Sim") |>
+      distinct(designacao, .keep_all = TRUE)
+    date <- Sys.Date()
+  },
+  error = function(e) {
+    indicators <- import(here("datasets", "Indicators.xlsx"))
+    date <- "2025-05-12"
+  }
+)
+
 # Prepare an empty list for the results
 result_list <- list()
 meta_list <- list()
@@ -633,7 +643,7 @@ ui <- fluidPage(
             choices = NULL,
             multiple = TRUE
           ) |>
-            tooltip("Indicadores atualizados em 2025-05-12"),
+            tooltip(paste0("Indicadores atualizados em ", date)),
           selectizeInput(
             "indicators_code_search",
             "Procurar por código:",
@@ -729,22 +739,17 @@ ui <- fluidPage(
         ),
         mainPanel(
           h3("Próximas melhorias"),
-          p(
-            "- Corrigir o cálculo dos indicadores para distrito, ACES, ULS ARS quando não são contagens;"
-          ),
-          p(
-            "- Remoção das variáveis para cálculo de dimensões não administrativas do INE (Distrito, ACES e ARS) - Para já deixo como validação"
-          ),
-          p("- Automatizar a procura dos indicadores disponíveis;"),
+          p("- Corrigir o cálculo dos indicadores para distrito, ACES, ULS ARS quando não são contagens;"),
+          p("- Remoção das variáveis para cálculo de dimensões não administrativas do INE (Distrito, ACES e ARS) - Para já deixo como validação"),
           p("- Melhoria na manipulação de variáveis e visualizações;"),
-          p(
-            "- Indicadores base em datasets base para evitar extração INE constante."
-          ),
+          p("- Indicadores base em datasets base para evitar extração INE constante."),
           br(),
           h2("Changelog"),
           h3("V0.5"),
           h4("2025-11-12"),
           p("- Otimização de código para as novas divisões"),
+          p("- Automatizar a procura dos indicadores disponíveis;"),
+          p("- Criação de esquema para copiar e colar indicadores do INE;"),
           h3("V0.43"),
           h4("2024-06-16"),
           p("- Otimização de código para maior velocidade"),
@@ -1525,6 +1530,11 @@ server <- function(input, output, session) {
       ]
       full_name <- if (length(full_name_vec) > 0) full_name_vec[1] else item
       title <- substr(full_name, 1, 20)
+      # Source - https://stackoverflow.com/q/10294284
+      # Posted by Qbik, modified by community. See post 'Timeline' for change history
+      # Retrieved 2025-11-15, License - CC BY-SA 4.0
+      x <- "a1~!@#$%^&*(){}_+:\"<>?,./;'[]-="
+      name_clean <- gsub("[[:punct:]]", "", title) # no libraries needed
 
       nav_panel(
         title,
@@ -1569,6 +1579,16 @@ server <- function(input, output, session) {
   observe({
     req(result_list_reactive())
     lapply(names(result_list_reactive()), function(item) {
+      full_name_vec <- indicators$designacao[
+        indicators$codigo_de_difusao == item
+      ]
+      full_name <- if (length(full_name_vec) > 0) full_name_vec[1] else item
+      title <- substr(full_name, 1, 20)
+      # Source - https://stackoverflow.com/q/10294284
+      # Posted by Qbik, modified by community. See post 'Timeline' for change history
+      # Retrieved 2025-11-15, License - CC BY-SA 4.0
+      name_clean <- gsub("[[:punct:]]", "", full_name)
+
       output[[paste0(item, "_table")]] <- renderDT({
         data <- result_list_reactive()[[item]]
         data <- data %>%
@@ -1579,7 +1599,7 @@ server <- function(input, output, session) {
 
       output[[paste0(item, "_download")]] <- downloadHandler(
         filename = function() {
-          paste0(item, ".csv")
+          paste0(item, format(Sys.Date(), "%Y%m%d"), name_clean, ".csv")
         },
         content = function(file) {
           data <- result_list_reactive()[[item]]
